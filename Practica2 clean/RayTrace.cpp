@@ -15,6 +15,8 @@
 #include <GL/glut.h>
 #endif
 
+
+
 #include "Scene.h"
 #include "RayTrace.h"
 #include "Ray.h"
@@ -72,8 +74,11 @@ Vector RayTrace::CalculatePixel (int screenX, int screenY)
       // Off the screen, return black
       return Vector (0.0f, 0.0f, 0.0f);
    }
+
+   float height = tanf(la_camara.fieldOfView / 2);
+   float width =  Scene::WINDOW_WIDTH / Scene::WINDOW_HEIGHT;
    
-   ray = CalculateRay(posicion, screenX, screenY);
+   ray = CalculateRay(la_camara.get, screenX * width, screenY * height);
 
    // Until this function is implemented, return white
    return Vector (1.0f, 1.0f, 1.0f);
@@ -82,8 +87,12 @@ Vector RayTrace::CalculatePixel (int screenX, int screenY)
 
 
 Ray RayTrace::CalculateRay(Vector posC, int screenX, int screenY){
+
+	//Teniendo height y width, tenemos que sumárselo a forward para obtener el vector que vaya al pixel.
 	Ray resultado;
 
 	resultado.setOrigen(posC);
 	resultado.setDir(Vector(screenX - posC.x, screenY - posC.y, -posC.z));
+
+	return resultado;
 }

@@ -19,7 +19,6 @@
 
 #include "Scene.h"
 #include "RayTrace.h"
-#include "Ray.h"
 
 // -- Main Functions --
 // - CalculatePixel - Returns the Computed Pixel for that screen coordinate
@@ -57,8 +56,6 @@ Vector RayTrace::CalculatePixel (int screenX, int screenY)
    will get you a final color that returns to the eye at this point.
    */
 
-	Ray ray;
-
 	if (screenX == 50 && screenY ==100)
    {
       int kk=0;
@@ -75,24 +72,45 @@ Vector RayTrace::CalculatePixel (int screenX, int screenY)
       return Vector (0.0f, 0.0f, 0.0f);
    }
 
-   float height = tanf(la_camara.fieldOfView / 2);
-   float width =  Scene::WINDOW_WIDTH / Scene::WINDOW_HEIGHT;
-   
-   ray = CalculateRay(la_camara.get, screenX * width, screenY * height);
+   Ray ray = CalculateRay(la_camara, screenX, screenY);
+
+   return ray.getDir();
+
+   //printf("(%f, %f, %f)\n", ray.getDir().x, ray.getDir().y, ray.getDir().z);
 
    // Until this function is implemented, return white
-   return Vector (1.0f, 1.0f, 1.0f);
+   
+   /*for (int i = 0; i < la_escena.GetNumObjects(); i++)
+   {
+	   SceneSphere esfera = *(SceneSphere)(la_escena.GetObjectW(i));
+	   if (la_escena.GetObjectW(i)->IsSphere()){
+		   if ((pow((ray.getDir().x - la_escena.GetObjectW(i)->position.x), 2) +
+			   pow((ray.getDir().y - la_escena.GetObjectW(i)->position.y), 2) +
+			   pow((ray.getDir().z - la_escena.GetObjectW(i)->position.z), 2)) > pow((SceneSphere)esfera, 2))
+		   {
+
+		   }
+	   }
+   }*/
    
 }
 
 
-Ray RayTrace::CalculateRay(Vector posC, int screenX, int screenY){
+Ray RayTrace::CalculateRay(Camera &cam, int screenX, int screenY){
 
 	//Teniendo height y width, tenemos que sumárselo a forward para obtener el vector que vaya al pixel.
 	Ray resultado;
 
-	resultado.setOrigen(posC);
-	resultado.setDir(Vector(screenX - posC.x, screenY - posC.y, -posC.z));
+	//const float aspect = Scene::WINDOW_WIDTH / Scene::WINDOW_HEIGHT;
+	//float halfHeight = tanf((cam.GetFOV()) * 0.5f);
+
+	double pixelCameraX = ((float)screenX / m_Scene.WINDOW_WIDTH)*tanf(cam.GetFOV());
+	double pixelCameraY = ((float)screenY / m_Scene.WINDOW_HEIGHT)*tanf(cam.GetFOV());
+	//Vector dir = Vector(pixelCameraX, pixelCameraY, -1.0f) - cam.position;
+
+	//dir.Normalize();
+	
+	resultado.setDir((Vector(pixelCameraX, pixelCameraY, -1.0f) - cam.GetPosition()));// .Normalize());
 
 	return resultado;
 }

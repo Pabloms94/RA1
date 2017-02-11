@@ -11,9 +11,10 @@ private:
 	Vector origen;
 	Vector direction;
 public:
-	Vector getOrigen() { return origen; }
-	Vector getDir() { return direction; }
+	Ray(){}
+	inline Vector getOrigen() { return origen; }
+	inline Vector getDir() { return direction; }
 
-	void setOrigen(Vector point) { origen = point; }
-	void setDir(Vector dir) { direction = dir; }
+	inline void setOrigen(Vector point) { origen = point; }
+	inline void setDir(Vector dir) { direction = dir; }
 };

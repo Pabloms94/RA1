@@ -17,6 +17,7 @@
 #include <stdlib.h>
 
 #include "Utils.h"
+#include "Ray.h"
 
 /*
 	RayTrace Class - The class containing the function you will need to implement
@@ -36,6 +37,6 @@ public:
 	// -- Main Functions --
 	// - CalculatePixel - Returns the Computed Pixel for that screen coordinate
    Vector CalculatePixel (int screenX, int screenY);
-   Ray CalculateRay(Vector posC, int screenX, int screenY);
+   Ray CalculateRay(Camera &cam, int screenX, int screenY);
 };
 

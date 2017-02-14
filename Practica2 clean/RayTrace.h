@@ -26,6 +26,10 @@
 */
 class RayTrace
 {
+private:
+	Camera mycam;
+	Vector pos, lookat, up, right;
+	float angle, tangen, aspect;
 public:
 	/* - Scene Variable for the Scene Definition - */
 	Scene m_Scene;
@@ -37,6 +41,6 @@ public:
 	// -- Main Functions --
 	// - CalculatePixel - Returns the Computed Pixel for that screen coordinate
    Vector CalculatePixel (int screenX, int screenY);
-   Ray CalculateRay(Camera &cam, int screenX, int screenY);
+   Ray CalculateRay(int screenX, int screenY);
 };
 

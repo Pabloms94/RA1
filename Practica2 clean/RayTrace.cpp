@@ -61,8 +61,8 @@ Vector RayTrace::CalculatePixel (int screenX, int screenY)
       int kk=0;
    }
    Scene &la_escena = m_Scene;
-   Camera &la_camara = la_escena.GetCamera();
-   Vector posicion = la_camara.GetPosition();
+   Camera mycam = la_escena.GetCamera();
+   Vector posicion = mycam.GetPosition();
 
 
    if ((screenX < 0 || screenX > Scene::WINDOW_WIDTH - 1) ||
@@ -72,45 +72,60 @@ Vector RayTrace::CalculatePixel (int screenX, int screenY)
       return Vector (0.0f, 0.0f, 0.0f);
    }
 
-   Ray ray = CalculateRay(la_camara, screenX, screenY);
+   pos = mycam.GetPosition();
+   lookat = mycam.GetTarget() - pos;
+   up = mycam.GetUp();
+   right = lookat.Cross(up);
+   up = right.Cross(lookat);
 
-   return ray.getDir();
+   up.Normalize();
+   right.Normalize();
+   lookat.Normalize();
+
+   angle = mycam.GetFOV() * 3.1416f / 180.0f;
+   tangen = tan(angle / 2.0f);
+   aspect = (float)Scene::WINDOW_WIDTH / (float)Scene::WINDOW_HEIGHT;
+
+   Ray ray = CalculateRay(screenX, screenY);
 
    //printf("(%f, %f, %f)\n", ray.getDir().x, ray.getDir().y, ray.getDir().z);
 
    // Until this function is implemented, return white
    
-   /*for (int i = 0; i < la_escena.GetNumObjects(); i++)
+   for (int i = 0; i < la_escena.GetNumObjects(); i++)
    {
-	   SceneSphere esfera = *(SceneSphere)(la_escena.GetObjectW(i));
-	   if (la_escena.GetObjectW(i)->IsSphere()){
-		   if ((pow((ray.getDir().x - la_escena.GetObjectW(i)->position.x), 2) +
-			   pow((ray.getDir().y - la_escena.GetObjectW(i)->position.y), 2) +
-			   pow((ray.getDir().z - la_escena.GetObjectW(i)->position.z), 2)) > pow((SceneSphere)esfera, 2))
-		   {
+	   
+	   if (la_escena.GetObject(i)->IsSphere()){
+		   SceneSphere esfera = *(SceneSphere*)la_escena.GetObject(i);
 
-		   }
+		   float t = (esfera.center - ray.getOrigen()).Dot(ray.getDir());
+		   Vector proj = ray.getOrigen() + ray.getDir() * t;
+		   Vector dist = (proj - esfera.center);
+
+		   if (dist.Magnitude() < esfera.radius)
+			   return Vector(1.0, 0.0, 0.0);
+			else
+				return Vector(0.0, 0.0, 0.0);	
 	   }
-   }*/
+   }
    
+   
+   return ray.getDir();
 }
 
+Ray RayTrace::CalculateRay(int screenX, int screenY){
+	float pixelCameraX = ((float)screenX * 2.0f / (float)m_Scene.WINDOW_WIDTH) - 1.0f;
+	float pixelCameraY = ((float)screenY * 2.0f / (float)m_Scene.WINDOW_HEIGHT) - 1.0f;
 
-Ray RayTrace::CalculateRay(Camera &cam, int screenX, int screenY){
+	Vector dir;
+	up = right.Cross(lookat);
+	dir = lookat + right * aspect * tangen * pixelCameraX + up * tangen * pixelCameraY;
+	dir.Normalize();
 
-	//Teniendo height y width, tenemos que sumárselo a forward para obtener el vector que vaya al pixel.
 	Ray resultado;
 
-	//const float aspect = Scene::WINDOW_WIDTH / Scene::WINDOW_HEIGHT;
-	//float halfHeight = tanf((cam.GetFOV()) * 0.5f);
-
-	double pixelCameraX = ((float)screenX / m_Scene.WINDOW_WIDTH)*tanf(cam.GetFOV());
-	double pixelCameraY = ((float)screenY / m_Scene.WINDOW_HEIGHT)*tanf(cam.GetFOV());
-	//Vector dir = Vector(pixelCameraX, pixelCameraY, -1.0f) - cam.position;
-
-	//dir.Normalize();
-	
-	resultado.setDir((Vector(pixelCameraX, pixelCameraY, -1.0f) - cam.GetPosition()));// .Normalize());
+	resultado.setDir(dir);
+	resultado.setOrigen(pos);
 
 	return resultado;
 }

@@ -24,38 +24,6 @@
 // - CalculatePixel - Returns the Computed Pixel for that screen coordinate
 Vector RayTrace::CalculatePixel (int screenX, int screenY)
 {
-   /*
-   -- How to Implement a Ray Tracer --
-
-   This computed pixel will take into account the camera and the scene
-   and return a Vector of <Red, Green, Blue>, each component ranging from 0.0 to 1.0
-
-   In order to start working on computing the color of this pixel,
-   you will need to cast a ray from your current camera position
-   to the image-plane at the given screenX and screenY
-   coordinates and figure out how/where this ray intersects with 
-   the objects in the scene descriptor.
-   The Scene Class exposes all of the scene's variables for you 
-   through its functions such as m_Scene.GetBackground (), m_Scene.GetNumLights (), 
-   etc. so you will need to use those to learn about the World.
-
-   To determine if your ray intersects with an object in the scene, 
-   you must calculate where your objects are in 3D-space [using 
-   the object's scale, rotation, and position is extra credit]
-   and mathematically solving for an intersection point corresponding to that object.
-
-   For example, for each of the spheres in the scene, you can use 
-   the equation of a sphere/ellipsoid to determine whether or not 
-   your ray from the camera's position to the screen-pixel intersects 
-   with the object, then from the incident angle to the normal at 
-   the contact, you can determine the reflected ray, and recursively 
-   repeat this process capped by a number of iterations (e.g. 10).
-
-   Using the lighting equation & texture to calculate the color at every 
-   intersection point and adding its fractional amount (determined by the material)
-   will get you a final color that returns to the eye at this point.
-   */
-
 	if (screenX == 50 && screenY ==100)
    {
       int kk=0;
@@ -91,26 +59,25 @@ Vector RayTrace::CalculatePixel (int screenX, int screenY)
    //printf("(%f, %f, %f)\n", ray.getDir().x, ray.getDir().y, ray.getDir().z);
 
    // Until this function is implemented, return white
-   
+   bool isIntersect = false;
    for (int i = 0; i < la_escena.GetNumObjects(); i++)
    {
-	   
-	   if (la_escena.GetObject(i)->IsSphere()){
-		   SceneSphere esfera = *(SceneSphere*)la_escena.GetObject(i);
+		if (la_escena.GetObject(i)->IsSphere())
+		{
+			if (SphereCollision(*(SceneSphere*)la_escena.GetObject(i), ray))
+				return Vector(1.0, 0.0, 0.0);
 
-		   float t = (esfera.center - ray.getOrigen()).Dot(ray.getDir());
-		   Vector proj = ray.getOrigen() + ray.getDir() * t;
-		   Vector dist = (proj - esfera.center);
-
-		   if (dist.Magnitude() < esfera.radius)
-			   return Vector(1.0, 0.0, 0.0);
-			else
-				return Vector(0.0, 0.0, 0.0);	
-	   }
-   }
+		}
+		else
+		{
+			if(TriangleCollision(*(SceneTriangle*)la_escena.GetObject(i), ray))
+				return Vector(0.0, 1.0, 0.0);
+		}
+	}
+	
+	return Vector(0.0, 0.0, 0.0);
    
-   
-   return ray.getDir();
+   //return ray.getDir();
 }
 
 Ray RayTrace::CalculateRay(int screenX, int screenY){
@@ -128,4 +95,51 @@ Ray RayTrace::CalculateRay(int screenX, int screenY){
 	resultado.setOrigen(pos);
 
 	return resultado;
+}
+
+bool SphereCollision(SceneSphere &esfera, Ray ray){
+	float t = (esfera.center - ray.getOrigen()).Dot(ray.getDir());
+	Vector proj = ray.getOrigen() + ray.getDir() * t;
+	Vector dist = (proj - esfera.center);
+
+	if (dist.Magnitude() < esfera.radius)
+		return true;
+	//return Vector(1.0, 0.0, 0.0);
+	else
+		return false;
+		//return Vector(0.0, 0.0, 0.0);
+}
+
+bool TriangleCollision(SceneTriangle &triangle, Ray ray)
+{
+	//Get Edges
+	Vector edge1 = triangle.vertex[1] - triangle.vertex[0];
+	Vector edge2 = triangle.vertex[2] - triangle.vertex[0];
+
+	Vector s1 = ray.getDir().Cross(edge2);
+	float divisor = edge1.Dot(s1);
+
+	if (divisor == 0.0f)
+		return false;
+		//return Vector(0.0, 0.0, 1.0);
+
+	float invDiv = 1.0f / divisor;
+	
+	//First barycentric position coordinate
+	Vector dir = ray.getOrigen() - triangle.vertex[0];
+	float bary1 = (dir.Dot(s1)) * invDiv;
+
+	if (bary1 < 0.0f || bary1 > 1.0f)
+		return false;
+		//return Vector(0.0, 0.0, 1.0);
+
+	Vector s2 = ray.getDir().Cross(edge1);
+	float bary2 = ray.getDir().Dot(s2) * invDiv;
+
+	if (bary2 < 0.0f || (bary1 + bary2) > 1.0f)
+		return false;
+		//return Vector(0.0, 0.0, 1.0);
+
+	return true;
+	//return Vector(0.0, 1.0, 0.0);
 }

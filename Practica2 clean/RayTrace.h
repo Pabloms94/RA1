@@ -24,6 +24,9 @@
 
 	This is the class with the function you need to implement
 */
+bool SphereCollision(SceneSphere &esfera, Ray ray);
+bool TriangleCollision(SceneTriangle &triangle, Ray ray);
+
 class RayTrace
 {
 private:

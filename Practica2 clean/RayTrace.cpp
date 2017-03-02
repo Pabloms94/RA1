@@ -64,20 +64,41 @@ Vector RayTrace::CalculatePixel (int screenX, int screenY)
    {
 		if (la_escena.GetObject(i)->IsSphere())
 		{
+			//printf("ENTRO1?\n");
 			if (SphereCollision(*(SceneSphere*)la_escena.GetObject(i), ray))
 				return Vector(1.0, 0.0, 0.0);
 
 		}
-		else
+		else if (la_escena.GetObject(i)->IsTriangle())
 		{
 			if(TriangleCollision(*(SceneTriangle*)la_escena.GetObject(i), ray))
 				return Vector(0.0, 1.0, 0.0);
 		}
+		
+		else if (la_escena.GetObject(i)->IsModel()){
+			
+			unsigned int nTriangles = (*(SceneModel*)la_escena.GetObject(i)).GetNumTriangles();
+			
+			for (int j = 0; j < nTriangles; j++){
+				
+				SceneTriangle *Triangulo = (*(SceneModel*)la_escena.GetObject(i)).GetTriangle(j); 
+				
+				//printf("(%f, %f, %f) - ", Triangulo->vertex[0].x, Triangulo->vertex[0].y, Triangulo->vertex[0].z);
+				//printf("(%f, %f, %f) - ", Triangulo->vertex[1].x, Triangulo->vertex[1].y, Triangulo->vertex[1].z);
+				//printf("(%f, %f, %f)\n", Triangulo->vertex[2].x, Triangulo->vertex[20].y, Triangulo->vertex[2].z);
+				if (TriangleCollision(*Triangulo, ray)) {
+
+					//printf("colisión!!!!\n");
+					return Vector(0.0, 1.0, 1.0);
+				}
+					
+			}
+		}
 	}
 	
-	return Vector(0.0, 0.0, 0.0);
+	//return Vector(0.0, 0.0, 0.0);
    
-   //return ray.getDir();
+   return ray.getDir();
 }
 
 Ray RayTrace::CalculateRay(int screenX, int screenY){
@@ -109,37 +130,51 @@ bool SphereCollision(SceneSphere &esfera, Ray ray){
 		return false;
 		//return Vector(0.0, 0.0, 0.0);
 }
-
+/**/
 bool TriangleCollision(SceneTriangle &triangle, Ray ray)
 {
 	//Get Edges
-	Vector edge1 = triangle.vertex[1] - triangle.vertex[0];
-	Vector edge2 = triangle.vertex[2] - triangle.vertex[0];
+	Vector e1 = triangle.vertex[1] - triangle.vertex[0];
+	Vector e2 = triangle.vertex[2] - triangle.vertex[0];
 
-	Vector s1 = ray.getDir().Cross(edge2);
-	float divisor = edge1.Dot(s1);
+	Vector P, Q, T;
+	float det, inv_det, u, v;
+	float t;
+	float epsilon = 1.0f;
 
-	if (divisor == 0.0f)
-		return false;
+	P = ray.getDir().Cross(e2);
+	det = e1.Dot(P);
+
+	if (det > -epsilon && det < epsilon) return false;		
 		//return Vector(0.0, 0.0, 1.0);
 
-	float invDiv = 1.0f / divisor;
+	inv_det = 1.0f / det;
 	
 	//First barycentric position coordinate
-	Vector dir = ray.getOrigen() - triangle.vertex[0];
-	float bary1 = (dir.Dot(s1)) * invDiv;
+	T = ray.getOrigen() - triangle.vertex[0];//POSIBLE FALLO
+	u = (T.Dot(P)) * inv_det;
 
-	if (bary1 < 0.0f || bary1 > 1.0f)
+	if (u < 0.0f || u > 1.0f)
 		return false;
 		//return Vector(0.0, 0.0, 1.0);
 
-	Vector s2 = ray.getDir().Cross(edge1);
-	float bary2 = ray.getDir().Dot(s2) * invDiv;
+	Q= T.Cross(e1);
+	v = ray.getDir().Dot(Q) * inv_det;
 
-	if (bary2 < 0.0f || (bary1 + bary2) > 1.0f)
+	if (v< 0.0f || (u+v) > 1.0f)
 		return false;
-		//return Vector(0.0, 0.0, 1.0);
-
+		
 	return true;
+
+	t = e2.Dot(Q)*inv_det;
+	/*
+	if (t > epsilon){
+		*out = t;
+		return 1;
+
+	}*/
 	//return Vector(0.0, 1.0, 0.0);
+	return 0;
 }
+
+

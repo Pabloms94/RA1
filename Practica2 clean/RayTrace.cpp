@@ -55,9 +55,12 @@ Vector RayTrace::CalculatePixel (int screenX, int screenY)
    aspect = (float)Scene::WINDOW_WIDTH / (float)Scene::WINDOW_HEIGHT;
 
    Ray ray = CalculateRay(screenX, screenY);
-
+   
    //printf("(%f, %f, %f)\n", ray.getDir().x, ray.getDir().y, ray.getDir().z);
-
+   SceneSphere sphere;
+   SceneTriangle triangle;
+   SceneModel model;
+   Vector posI;
    // Until this function is implemented, return white
    bool isIntersect = false;
    for (int i = 0; i < la_escena.GetNumObjects(); i++)
@@ -65,9 +68,11 @@ Vector RayTrace::CalculatePixel (int screenX, int screenY)
 		if (la_escena.GetObject(i)->IsSphere())
 		{
 			//printf("ENTRO1?\n");
-			if (SphereCollision(*(SceneSphere*)la_escena.GetObject(i), ray))
-				return Vector(1.0, 0.0, 0.0);
-
+			if (SphereCollision(*(SceneSphere*)la_escena.GetObject(i), ray, posI)){
+				sphere = (*(SceneSphere*)la_escena.GetObject(i));
+				Vector color = SphereColor(la_escena, sphere, posI);
+				return color;
+			}
 		}
 		else if (la_escena.GetObject(i)->IsTriangle())
 		{
@@ -81,12 +86,12 @@ Vector RayTrace::CalculatePixel (int screenX, int screenY)
 			
 			for (int j = 0; j < nTriangles; j++){
 				
-				SceneTriangle *Triangulo = (*(SceneModel*)la_escena.GetObject(i)).GetTriangle(j); 
+				//SceneTriangle *Triangulo = (*(SceneModel*)la_escena.GetObject(i)).GetTriangle(j); 
 				
 				//printf("(%f, %f, %f) - ", Triangulo->vertex[0].x, Triangulo->vertex[0].y, Triangulo->vertex[0].z);
 				//printf("(%f, %f, %f) - ", Triangulo->vertex[1].x, Triangulo->vertex[1].y, Triangulo->vertex[1].z);
 				//printf("(%f, %f, %f)\n", Triangulo->vertex[2].x, Triangulo->vertex[20].y, Triangulo->vertex[2].z);
-				if (TriangleCollision(*Triangulo, ray)) {
+				if (TriangleCollision(*(*(SceneModel*)la_escena.GetObject(i)).GetTriangle(j), ray)) {
 
 					//printf("colisión!!!!\n");
 					return Vector(0.0, 1.0, 1.0);
@@ -96,9 +101,9 @@ Vector RayTrace::CalculatePixel (int screenX, int screenY)
 		}
 	}
 	
-	//return Vector(0.0, 0.0, 0.0);
+	return Vector(0.0, 0.0, 0.0);
    
-   return ray.getDir();
+   //return ray.getDir();
 }
 
 Ray RayTrace::CalculateRay(int screenX, int screenY){
@@ -118,10 +123,12 @@ Ray RayTrace::CalculateRay(int screenX, int screenY){
 	return resultado;
 }
 
-bool SphereCollision(SceneSphere &esfera, Ray ray){
+bool SphereCollision(SceneSphere &esfera, Ray ray, Vector &posIntersect){
 	float t = (esfera.center - ray.getOrigen()).Dot(ray.getDir());
 	Vector proj = ray.getOrigen() + ray.getDir() * t;
 	Vector dist = (proj - esfera.center);
+
+	posIntersect = SphereIntersect(ray, proj, esfera);
 
 	if (dist.Magnitude() < esfera.radius)
 		return true;
@@ -130,6 +137,71 @@ bool SphereCollision(SceneSphere &esfera, Ray ray){
 		return false;
 		//return Vector(0.0, 0.0, 0.0);
 }
+
+Vector SphereIntersect(Ray ray, Vector p, SceneSphere &esfera)
+{
+	float result1, result2;
+	Vector result;
+
+	float radius = esfera.radius * esfera.radius;
+	float a = 1.0f;//pow(p.x - esfera.position.x, 2);
+	float b = ((ray.getDir() * (ray.getOrigen() - esfera.center)) * 2).Magnitude();//pow(p.y - esfera.position.y, 2);
+	float c = pow((ray.getOrigen() - esfera.center).Magnitude(), 2) - radius;//pow(p.z - esfera.position.z, 2);
+
+	float discriminate = b * b - a * c;
+	float disc = sqrt(b * b - a * c);
+
+	if (discriminate < 0){
+		return Vector(NULL, NULL, NULL);
+	}
+	else{
+		result1 = (-b + disc);
+		result2 = (-b - disc);// / 2 * a;
+
+		if (result1 > 0 && result2 > 0)
+		{
+			if (result1 > result2)
+			{
+				result = ray.getOrigen() + ray.getDir() * result2;
+
+				return result;
+			}
+			else
+			{
+				result = ray.getOrigen() + ray.getDir() * result1;
+				return result;
+			}
+		}
+		else if (result1 > 0)
+		{
+			result = ray.getOrigen() + ray.getDir() * result1;
+			//printf("(%f, %f, %f)\n", result.x, result.y, result.z);
+			return result;
+		}
+		else
+		{
+			result = ray.getOrigen() + ray.getDir() * result2;
+			//printf("(%f, %f, %f)\n", result.x, result.y, result.z);
+			return result;
+		}
+	}
+}
+
+Vector SphereColor(Scene &escena, SceneSphere sphere, Vector point){
+	Vector color = Vector (0.0f, 0.0f, 0.0f);
+	SceneMaterial *material = escena.GetMaterial(sphere.name);
+	
+	Vector normal = (point - sphere.center).Normalize();
+	Vector v = escena.GetCamera().GetPosition() - point;
+
+	for (int i = 0; i < escena.GetNumLights(); i++){
+		Vector l = (escena.GetLight(i)->position - point);
+		Vector r = normal * 2 * (l.Dot(normal)) - l;
+		color += escena.GetLight(i)->; //Probablemente, la constante especular sea 1
+	}
+	return color;
+}
+
 /**/
 bool TriangleCollision(SceneTriangle &triangle, Ray ray)
 {
@@ -140,7 +212,7 @@ bool TriangleCollision(SceneTriangle &triangle, Ray ray)
 	Vector P, Q, T;
 	float det, inv_det, u, v;
 	float t;
-	float epsilon = 1.0f;
+	float epsilon = 0.0f;
 
 	P = ray.getDir().Cross(e2);
 	det = e1.Dot(P);
@@ -176,5 +248,3 @@ bool TriangleCollision(SceneTriangle &triangle, Ray ray)
 	//return Vector(0.0, 1.0, 0.0);
 	return 0;
 }
-
-

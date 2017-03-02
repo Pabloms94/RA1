@@ -24,8 +24,11 @@
 
 	This is the class with the function you need to implement
 */
-bool SphereCollision(SceneSphere &esfera, Ray ray);
+
+bool SphereCollision(SceneSphere &esfera, Ray ray, Vector &posIntersect);
 bool TriangleCollision(SceneTriangle &triangle, Ray ray);
+Vector SphereIntersect(Ray ray, Vector p, SceneSphere &esfera);
+Vector SphereColor(Scene &escena, SceneSphere sphere, Vector point);
 
 class RayTrace
 {

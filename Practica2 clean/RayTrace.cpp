@@ -143,32 +143,35 @@ Vector SphereIntersect(Ray ray, Vector p, SceneSphere &esfera)
 	float result1, result2;
 	Vector result;
 
-	float radius = esfera.radius * esfera.radius;
-	float a = 1.0f;//pow(p.x - esfera.position.x, 2);
-	float b = ((ray.getDir() * (ray.getOrigen() - esfera.center)) * 2).Magnitude();//pow(p.y - esfera.position.y, 2);
-	float c = pow((ray.getOrigen() - esfera.center).Magnitude(), 2) - radius;//pow(p.z - esfera.position.z, 2);
+	float radius2 = esfera.radius * esfera.radius;
+	float a = ray.getDir().Dot(ray.getDir());//pow(p.x - esfera.position.x, 2);
+	float b = (ray.getDir().Dot(ray.getOrigen() - esfera.center)) * 2;//pow(p.y - esfera.position.y, 2);
+	float c = (ray.getOrigen() - esfera.center).Dot(ray.getOrigen() - esfera.center) - radius2;//pow(p.z - esfera.position.z, 2);
 
-	float discriminate = b * b - a * c;
-	float disc = sqrt(b * b - a * c);
+	float discriminate = b * b - 4 * a * c;
+	float disc = sqrt(b * b - 4 * a * c);
 
 	if (discriminate < 0){
 		return Vector(NULL, NULL, NULL);
 	}
 	else{
-		result1 = (-b + disc);
-		result2 = (-b - disc);// / 2 * a;
+		result1 = (-b + disc) / (2 * a);
+		result2 = (-b - disc) / (2 * a);// / 2 * a;
 
 		if (result1 > 0 && result2 > 0)
 		{
 			if (result1 > result2)
 			{
 				result = ray.getOrigen() + ray.getDir() * result2;
+				//printf("(%f, %f, %f)\n", result.x, result.y, result.z);
 
 				return result;
 			}
 			else
 			{
 				result = ray.getOrigen() + ray.getDir() * result1;
+				//printf("(%f, %f, %f)\n", result.x, result.y, result.z);
+
 				return result;
 			}
 		}
@@ -182,6 +185,7 @@ Vector SphereIntersect(Ray ray, Vector p, SceneSphere &esfera)
 		{
 			result = ray.getOrigen() + ray.getDir() * result2;
 			//printf("(%f, %f, %f)\n", result.x, result.y, result.z);
+
 			return result;
 		}
 	}
@@ -196,9 +200,10 @@ Vector SphereColor(Scene &escena, SceneSphere sphere, Vector point){
 
 	SceneMaterial *material = escena.GetMaterial(sphere.material);
 	
-	Vector normal = (sphere.center - point).Normalize();
+	//Vector normal = (sphere.center - point).Normalize();
+	Vector normal = (point - sphere.center).Normalize();
 	Vector V = (escena.GetCamera().GetPosition() - point).Normalize();
-	printf("V: (%f, %f, %f)\n", V.x, V.y, V.z);
+	//printf("V: (%f, %f, %f)\n", V.x, V.y, V.z);
 
 	for (int i = 0; i < escena.GetNumLights(); i++){
 		Vector L = (escena.GetLight(i)->position - point).Normalize();
@@ -210,21 +215,20 @@ Vector SphereColor(Scene &escena, SceneSphere sphere, Vector point){
 		color = color + diffuse.Clamp();
 		//printf("COLOR1: (%f, %f, %f)\n", color.x, color.y, color.z);
 		//Especular
-		////Vector V = point.Normalize() * -1;
-		Vector R = normal * 2 * (normal.Dot(L)) - L;
-		printf("R: (%f, %f, %f)\n", R.x, R.y, R.z);
+		//Vector V = point.Normalize() * -1;
 
-		float Sfactor = max(R.Dot(V), 0.0001);
-		printf("Sfactor: %f\n", Sfactor);
+		Vector R = normal * 2 * (normal.Dot(L)) - L;
+		Vector V = (escena.GetCamera().GetPosition() - point).Normalize();
+		float Sfactor = R.Dot(V);
+		//printf("Sfactor: %f\n", Sfactor);
 		Sfactor = pow(Sfactor, material->shininess);
 		Vector spec = escena.GetLight(i)->color * material->specular * Sfactor;
 
-		if (spec.x >0 || spec.y >0 || spec.z >0)
-			printf("spec: (%f, %f, %f)\n", spec.x, spec.y, spec.z);
+		/*if (spec.x >0 || spec.y >0 || spec.z >0)
+			printf("spec: (%f, %f, %f)\n", spec.x, spec.y, spec.z);*/
 
 		color = color + spec.Clamp();
 		//printf("COLOR2: (%f, %f, %f)\n", color.x, color.y, color.z);
-		//color += escena.GetLight(i)->; //Probablemente, la constante especular sea 1
 	}
 
 	

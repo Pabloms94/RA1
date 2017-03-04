@@ -101,6 +101,24 @@ public:
 	{
 		return Vector (x * scaleVector.x, y * scaleVector.y, z * scaleVector.z, w * scaleVector.w);
 	}
+
+	Vector Clamp(){
+		std::vector<float> mini, maxi, val;
+		mini.resize(3, 0.0f);
+		maxi.resize(3, 0.0f);
+		val.push_back(this->x);
+		val.push_back(this->y);
+		val.push_back(this->z);
+
+		std::vector<float> result = min(max(val, maxi), mini);
+		Vector resultado;
+		resultado.x = result.at(0);
+		resultado.y = result.at(1);
+		resultado.z = result.at(2);
+
+		return resultado;
+	}
+
 };
 
 /*

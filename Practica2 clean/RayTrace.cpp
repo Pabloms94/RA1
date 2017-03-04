@@ -187,16 +187,29 @@ Vector SphereIntersect(Ray ray, Vector p, SceneSphere &esfera)
 	}
 }
 
+
+
 Vector SphereColor(Scene &escena, SceneSphere sphere, Vector point){
 	Vector color = Vector (0.0f, 0.0f, 0.0f);
+	Vector mini = Vector(0.0f, 0.0f, 0.0f);
+	Vector maxi = Vector(1.0f, 1.0f, 1.0f);
+
 	SceneMaterial *material = escena.GetMaterial(sphere.name);
 	
 	Vector normal = (point - sphere.center).Normalize();
 	Vector v = escena.GetCamera().GetPosition() - point;
 
 	for (int i = 0; i < escena.GetNumLights(); i++){
-		Vector l = (escena.GetLight(i)->position - point);
-		Vector r = normal * 2 * (l.Dot(normal)) - l;
+		Vector L = (escena.GetLight(i)->position - point).Normalize();
+		Vector diffuse = escena.GetLight(i)->color * material->diffuse * normal.Dot(L);
+
+		color = color + diffuse.Clamp();
+
+		//Especular
+		Vector V = point.Normalize() * -1;
+		Vector R
+
+		Vector r = normal * 2 * (L.Dot(normal)) - L;
 		color += escena.GetLight(i)->; //Probablemente, la constante especular sea 1
 	}
 	return color;

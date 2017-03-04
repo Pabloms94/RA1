@@ -194,24 +194,40 @@ Vector SphereColor(Scene &escena, SceneSphere sphere, Vector point){
 	Vector mini = Vector(0.0f, 0.0f, 0.0f);
 	Vector maxi = Vector(1.0f, 1.0f, 1.0f);
 
-	SceneMaterial *material = escena.GetMaterial(sphere.name);
+	SceneMaterial *material = escena.GetMaterial(sphere.material);
 	
-	Vector normal = (point - sphere.center).Normalize();
-	Vector v = escena.GetCamera().GetPosition() - point;
+	Vector normal = (sphere.center - point).Normalize();
+	Vector V = (escena.GetCamera().GetPosition() - point).Normalize();
+	printf("V: (%f, %f, %f)\n", V.x, V.y, V.z);
 
 	for (int i = 0; i < escena.GetNumLights(); i++){
 		Vector L = (escena.GetLight(i)->position - point).Normalize();
-		Vector diffuse = escena.GetLight(i)->color * material->diffuse * normal.Dot(L);
+		//printf("normal: (%f, %f, %f)\n", normal.x, normal.y, normal.z);
 
+		/*(material->diffuse).Magnitude()*/
+		Vector diffuse = (escena.GetLight(i)->color) * material->diffuse * normal.Dot(L);
+		
 		color = color + diffuse.Clamp();
-
+		//printf("COLOR1: (%f, %f, %f)\n", color.x, color.y, color.z);
 		//Especular
-		Vector V = point.Normalize() * -1;
-		Vector R
+		////Vector V = point.Normalize() * -1;
+		Vector R = normal * 2 * (normal.Dot(L)) - L;
+		printf("R: (%f, %f, %f)\n", R.x, R.y, R.z);
 
-		Vector r = normal * 2 * (L.Dot(normal)) - L;
-		color += escena.GetLight(i)->; //Probablemente, la constante especular sea 1
+		float Sfactor = max(R.Dot(V), 0.0001);
+		printf("Sfactor: %f\n", Sfactor);
+		Sfactor = pow(Sfactor, material->shininess);
+		Vector spec = escena.GetLight(i)->color * material->specular * Sfactor;
+
+		if (spec.x >0 || spec.y >0 || spec.z >0)
+			printf("spec: (%f, %f, %f)\n", spec.x, spec.y, spec.z);
+
+		color = color + spec.Clamp();
+		//printf("COLOR2: (%f, %f, %f)\n", color.x, color.y, color.z);
+		//color += escena.GetLight(i)->; //Probablemente, la constante especular sea 1
 	}
+
+	
 	return color;
 }
 

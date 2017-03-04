@@ -105,12 +105,12 @@ public:
 	Vector Clamp(){
 		std::vector<float> mini, maxi, val;
 		mini.resize(3, 0.0f);
-		maxi.resize(3, 0.0f);
+		maxi.resize(3, 1.0f);
 		val.push_back(this->x);
 		val.push_back(this->y);
 		val.push_back(this->z);
 
-		std::vector<float> result = min(max(val, maxi), mini);
+		std::vector<float> result = min(max(val, mini), maxi);
 		Vector resultado;
 		resultado.x = result.at(0);
 		resultado.y = result.at(1);

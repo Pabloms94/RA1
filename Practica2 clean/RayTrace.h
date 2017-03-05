@@ -26,9 +26,10 @@
 */
 
 bool SphereCollision(SceneSphere &esfera, Ray ray, Vector &posIntersect);
-bool TriangleCollision(SceneTriangle &triangle, Ray ray);
+bool TriangleCollision(SceneTriangle &triangle, Ray ray, Vector &intPoint, float &u, float &v);
 Vector SphereIntersect(Ray ray, Vector p, SceneSphere &esfera);
 Vector SphereColor(Scene &escena, SceneSphere sphere, Vector point);
+Vector TriangleColor(Scene &escena, SceneTriangle &triangle, Vector &point, float &u, float &v);
 
 class RayTrace
 {

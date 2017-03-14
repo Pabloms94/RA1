@@ -61,6 +61,34 @@
 			<rotation x="0.0" y="0.0" z="0.0"/>
 			<position x="0.0" y="0.0" z="0.0"/>
 		</model>
+		
+		<!-- Triangle Object -->
+		<triangle name="Triangle">
+			<scale x="1.0" y="1.0" z="1.0"/>
+			<rotation x="0.0" y="0.0" z="0.0"/>
+			<position x="0.0" y="0.0" z="0.0"/>
+
+			<!-- First Vertex -->
+			<vertex index="0" material="Purple">
+				<position x="-2.0" y="-2.0" z="-8.0"/>
+				<normal x="0.0" y="1.0" z="1.0"/>
+				<texture u="0.0" v="0.0"/>
+			</vertex>
+
+			<!-- Second Vertex -->
+			<vertex index="1" material="Red">
+				<position x="2.0" y="-2.0" z="-8.0"/>
+				<normal x="0.0" y="1.0" z="1.0"/>
+				<texture u="0.0" v="1.0"/>
+			</vertex>
+
+			<!-- Third Vertex -->
+			<vertex index="2" material="White">
+				<position x="0.0" y="2.0" z="-8.0"/>
+				<normal x="0.0" y="1.0" z="1.0"/>
+				<texture u="1.0" v="0.0"/>
+			</vertex>
+		</triangle>
 	</object_list>
 	
 <!-- End of Scene -->

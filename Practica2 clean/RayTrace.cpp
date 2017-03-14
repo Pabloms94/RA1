@@ -56,39 +56,48 @@ Vector RayTrace::CalculatePixel (int screenX, int screenY)
 
    Ray ray = CalculateRay(screenX, screenY);
    
-   //printf("(%f, %f, %f)\n", ray.getDir().x, ray.getDir().y, ray.getDir().z);
    SceneSphere sphere;
    SceneTriangle triangle;
    SceneModel model;
    Vector posI;
-   // Until this function is implemented, return white
+
    bool isIntersect = false;
    for (int i = 0; i < la_escena.GetNumObjects(); i++)
    {
 		if (la_escena.GetObject(i)->IsSphere())
 		{
 			if (SphereCollision(*(SceneSphere*)la_escena.GetObject(i), ray, posI)){
+				if (IsCastShadow(posI, la_escena.GetLight(0)->position, la_escena))
+					return Vector(0, 0, 0);
 				sphere = (*(SceneSphere*)la_escena.GetObject(i));
 				return SphereColor(la_escena, sphere, posI);
 			}
 		}
 		else if (la_escena.GetObject(i)->IsTriangle())
 		{
-			float u, v;
-			if (TriangleCollision(*(SceneTriangle*)la_escena.GetObject(i), ray, posI, u, v)){
+			float u, v, t;
+			bool dentro = false;
+			if (rayTriangleIntersect(*(SceneTriangle*)la_escena.GetObject(i), ray, posI, t, u, v)){
+			//if (TriangleCollision(*(SceneTriangle*)la_escena.GetObject(i), ray, posI, u, v)){
+				if (IsCastShadow(posI, la_escena.GetLight(0)->position, la_escena))
+					return Vector(0, 0, 0);
 				triangle = *(SceneTriangle*)la_escena.GetObject(i);
-				return TriangleColor(la_escena, triangle, posI, u, v);
+				return TriangleColor(la_escena, triangle, posI, u, v, dentro);
 			}
 		}
 		else if (la_escena.GetObject(i)->IsModel())
 		{
 			unsigned int nTriangles = (*(SceneModel*)la_escena.GetObject(i)).GetNumTriangles();
-			
+			bool dentro = true;
 			for (int j = 0; j < nTriangles; j++){
-				float u, v;
-				if (TriangleCollision(*(*(SceneModel*)la_escena.GetObject(i)).GetTriangle(j), ray, posI, u, v)) {
+				float u, v, t;
+				//if (TriangleCollision(*(*(SceneModel*)la_escena.GetObject(i)).GetTriangle(j), ray, posI, u, v)) {
+				
+				if (rayTriangleIntersect(*(*(SceneModel*)la_escena.GetObject(i)).GetTriangle(j), ray, posI, t, u, v)){
+					if (IsCastShadow(posI, la_escena.GetLight(0)->position, la_escena))
+						return Vector(0, 0, 0);
 					triangle = *(*(SceneModel*)la_escena.GetObject(i)).GetTriangle(j);
-					return TriangleColor(la_escena, triangle, posI, u, v);
+					return TriangleColor(la_escena, triangle, posI, u, v, dentro);
 				}
 					
 			}
@@ -215,31 +224,48 @@ Vector SphereColor(Scene &escena, SceneSphere sphere, Vector point){
 	return color;
 }
 
-Vector TriangleColor(Scene &escena, SceneTriangle &triangle, Vector &point, float &u, float &v){
+Vector TriangleColor(Scene &escena, SceneTriangle &triangle, Vector &point, float &u, float &v, bool &dentro){
 	Vector color = Vector(0.0f, 0.0f, 0.0f);
 	color = color + (Vector)(escena.GetBackground().ambientLight) * 0.07f;
 
 	Vector normal = triangle.normal[0] * u + triangle.normal[1] * v + triangle.normal[2] * (1 - u - v);
-	Vector diffuse = (escena.GetMaterial(triangle.material[0])->diffuse) * u + (escena.GetMaterial(triangle.material[1])->diffuse) * v + (escena.GetMaterial(triangle.material[2])->diffuse) * (1 - u - v);
-	Vector especular = (escena.GetMaterial(triangle.material[0])->specular) * u + (escena.GetMaterial(triangle.material[1])->specular) * v + (escena.GetMaterial(triangle.material[2])->specular) * (1 - u - v);
-	float shininess = (escena.GetMaterial(triangle.material[0])->shininess) * u + (escena.GetMaterial(triangle.material[1])->shininess) * v + (escena.GetMaterial(triangle.material[2])->shininess) * (1 - u - v);
+	normal = normal / normal.Magnitude();
+	//Vector normal = (triangle.vertex[1] - triangle.vertex[0]).Cross(triangle.vertex[2] - triangle.vertex[0]);
+	//normal = normal / normal.Magnitude();
 
-	for (int i = 0; i < escena.GetNumLights(); i++){
+	//printf("u: %f, v: %f, w: %f\n",u, v, (1 - u - v));
+	//Vector normal = triangle.normal[0] + triangle.normal[1] + triangle.normal[2] ;
+
+	Vector diffuse = (escena.GetMaterial(triangle.material[1])->diffuse) * u + (escena.GetMaterial(triangle.material[2])->diffuse) * v + (escena.GetMaterial(triangle.material[0])->diffuse) * (1 - u - v);
+	//diffuse = diffuse / diffuse.Magnitude();
+	//Vector especular = (escena.GetMaterial(triangle.material[1])->specular) * u + (escena.GetMaterial(triangle.material[2])->specular) * v + (escena.GetMaterial(triangle.material[0])->specular) * (1 - u - v);
+	//especular = especular / especular.Magnitude();
+	//float shininess = (escena.GetMaterial(triangle.material[1])->shininess) * u + (escena.GetMaterial(triangle.material[2])->shininess) * v + (escena.GetMaterial(triangle.material[0])->shininess) * (1 - u - v);
+
+	//for (int i = 0; i < escena.GetNumLights(); i++){
+		int i = 0;
 		Vector L = (escena.GetLight(i)->position - point).Normalize();
-		Vector diff = (escena.GetLight(i)->color) * diffuse * normal.Dot(L);
-
-		color = color + diff.Clamp();
+		Vector diff = escena.GetLight(i)->color * diffuse * normal.Dot(L);
+		//if (normal.Dot(L) < 1.f){
+		if (dentro){
+			printf("normal = %f, %f, %f\n", normal.x, normal.y, normal.z);
+			printf("L = %f, %f, %f\n", L.x, L.y, L.z);
+			printf("normal dot L = %f\n", normal.Dot(L));
+		}
+		//}
+		color = color + diff;// .Clamp();
 
 		//Especular
-		Vector R = normal * 2 * (normal.Dot(L)) - L;
-		Vector V = (escena.GetCamera().GetPosition() - point).Normalize();
-		float Sfactor = R.Dot(V);
+		//Vector R = normal * 2.0f * (normal.Dot(L)) - L;
+		//Vector V = (escena.GetCamera().GetPosition() - point).Normalize();
+		//float Sfactor = R.Dot(V);
 
-		Sfactor = pow(Sfactor, shininess);
-		Vector spec = escena.GetLight(i)->color * especular * Sfactor;
+		//Sfactor = pow(Sfactor, shininess);
+		//Vector spec = escena.GetLight(i)->color * especular * Sfactor;
 
-		color = color + spec.Clamp();
-	}
+		//color = color + spec.Clamp();
+	//}
+		dentro = false;
 
 	return color;
 }
@@ -259,7 +285,7 @@ bool TriangleCollision(SceneTriangle &triangle, Ray ray, Vector &intPoint, float
 	P = ray.getDir().Cross(e2);
 	det = e1.Dot(P);
 
-	if (det > -epsilon && det < epsilon) return false;		
+	if (/*det > -epsilon &&*/ det < epsilon) return false;		
 		//return Vector(0.0, 0.0, 1.0);
 
 	inv_det = 1.0f / det;
@@ -292,4 +318,82 @@ bool TriangleCollision(SceneTriangle &triangle, Ray ray, Vector &intPoint, float
 
 	}*/
 	//return Vector(0.0, 1.0, 0.0);
+}
+
+bool rayTriangleIntersect(SceneTriangle &triangle, Ray ray, Vector &intPoint, float &t, float &u, float &v)
+{
+	float const EPSILON = 0.000001;
+	Vector edge1 = triangle.vertex[1] - triangle.vertex[0];
+	Vector edge2 = triangle.vertex[2] - triangle.vertex[0];
+	//Calculamos el determinante
+	Vector pvec = ray.getDir().Cross(edge2);
+	float det = edge1.Dot(pvec);
+
+	if (det < EPSILON) return false;
+
+	//Calculamos distancia del vertice 0 al origen del rayo
+	Vector tvec = ray.getOrigen() - triangle.vertex[0];
+
+	//Calculamos el parámetro U y lo testeamos
+	u = tvec.Dot(pvec);// *invDet;
+	if (u < 0.0 || u > det) return false;
+
+	//Calculamos V y lo testeamos
+	Vector qvec = tvec.Cross(edge1);
+	v = ray.getDir().Dot(qvec);// *invDet;
+	if (v < 0.0 || (u + v) > det) return false;
+
+	//Calculamos t
+	t = edge2.Dot(qvec);// *invDet;
+
+	float invDet = 1.0 / det;
+
+	t *= invDet;
+	u *= invDet;
+	v *= invDet;
+
+	return true;
+}
+
+bool IsCastShadow(Vector orig, Vector pLight, Scene &la_escena)
+{
+	Ray ray;
+	ray.setOrigen(orig);
+	ray.setDir(pLight - orig);
+	Vector posI;
+
+	for (int i = 0; i < la_escena.GetNumObjects(); i++)
+	{
+		if (la_escena.GetObject(i)->IsSphere())
+		{
+			if (SphereCollision(*(SceneSphere*)la_escena.GetObject(i), ray, posI)){
+				//if ((ray.getDir().Magnitude() >(orig - posI).Magnitude()) && (ray.getDir().Magnitude() > (posI - pLight).Magnitude()))
+					return true;
+			}
+		}
+		else if (la_escena.GetObject(i)->IsTriangle())
+		{
+			float u, v, t;
+			bool dentro = false;
+			if (rayTriangleIntersect(*(SceneTriangle*)la_escena.GetObject(i), ray, posI, t, u, v)){
+				//if (ray.getDir().Magnitude() > (orig - posI).Magnitude() && (ray.getDir().Magnitude() > (posI - pLight).Magnitude()))
+					return true;
+			}
+		}
+		else if (la_escena.GetObject(i)->IsModel())
+		{
+			unsigned int nTriangles = (*(SceneModel*)la_escena.GetObject(i)).GetNumTriangles();
+			bool dentro = true;
+			for (int j = 0; j < nTriangles; j++){
+				float u, v, t;
+				//if (TriangleCollision(*(*(SceneModel*)la_escena.GetObject(i)).GetTriangle(j), ray, posI, u, v)) {
+
+				if (rayTriangleIntersect(*(*(SceneModel*)la_escena.GetObject(i)).GetTriangle(j), ray, posI, t, u, v)){
+					//if (ray.getDir().Magnitude() >(orig - posI).Magnitude() && (ray.getDir().Magnitude() > (posI - pLight).Magnitude()))
+						return true;
+				}
+			}
+		}
+	}
+	return false;
 }

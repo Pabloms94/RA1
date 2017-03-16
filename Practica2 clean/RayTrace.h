@@ -28,7 +28,8 @@
 bool SphereCollision(SceneSphere &esfera, Ray ray, Vector &posIntersect);
 bool TriangleCollision(SceneTriangle &triangle, Ray ray, Vector &intPoint, float &u, float &v);
 bool rayTriangleIntersect(SceneTriangle &triangle, Ray ray, Vector &intPoint, float &t, float &u, float &v);
-bool IsCastShadow(Vector orig, Vector pLight, Scene &la_escena);
+bool IsCastShadow(Vector orig, Vector pLight, Scene &la_escena, int indice);
+float GetDistance(Vector origen, Vector destino);
 Vector SphereIntersect(Ray ray, Vector p, SceneSphere &esfera);
 Vector SphereColor(Scene &escena, SceneSphere sphere, Vector point);
 Vector TriangleColor(Scene &escena, SceneTriangle &triangle, Vector &point, float &u, float &v, bool &dentro);

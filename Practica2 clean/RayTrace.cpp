@@ -69,15 +69,14 @@ Vector RayTrace::CalculatePixel (int screenX, int screenY)
 		if (la_escena.GetObject(i)->IsSphere())
 		{
 			if (SphereCollision(*(SceneSphere*)la_escena.GetObject(i), ray, posI)){
-				if (IsCastShadow(posI, la_escena.GetLight(0)->position, la_escena, i))
-					if (posI.z < profundidad){
-						color = Vector(0, 0, 0);
-						profundidad = posI.z;
-					}
-					
 				if (posI.z < profundidad){
-					sphere = (*(SceneSphere*)la_escena.GetObject(i));
-					color = SphereColor(la_escena, sphere, posI);
+					if (IsCastShadow(posI, la_escena.GetLight(0)->position, la_escena, i))
+						color = Vector(0, 0, 0);
+					else{
+						sphere = (*(SceneSphere*)la_escena.GetObject(i));
+						color = SphereColor(la_escena, sphere, posI);
+						
+					}
 					profundidad = posI.z;
 				}
 			}
@@ -88,15 +87,13 @@ Vector RayTrace::CalculatePixel (int screenX, int screenY)
 			bool dentro = false;
 			if (rayTriangleIntersect(*(SceneTriangle*)la_escena.GetObject(i), ray, posI, t, u, v)){
 			//if (TriangleCollision(*(SceneTriangle*)la_escena.GetObject(i), ray, posI, u, v)){
-				if (IsCastShadow(posI, la_escena.GetLight(0)->position, la_escena, i))
-					if (posI.z < profundidad){
-						color = Vector(0, 0, 0);
-						profundidad = posI.z;
-					}
-
 				if (posI.z < profundidad){
-					triangle = *(SceneTriangle*)la_escena.GetObject(i);
-					color = TriangleColor(la_escena, triangle, posI, u, v, dentro);
+					if (IsCastShadow(posI, la_escena.GetLight(0)->position, la_escena, i))
+						color = Vector(0, 0, 0);
+					else{
+						triangle = *(SceneTriangle*)la_escena.GetObject(i);
+						color = TriangleColor(la_escena, triangle, posI, u, v, dentro);
+					}
 					profundidad = posI.z;
 				}
 			}
@@ -110,15 +107,13 @@ Vector RayTrace::CalculatePixel (int screenX, int screenY)
 				//if (TriangleCollision(*(*(SceneModel*)la_escena.GetObject(i)).GetTriangle(j), ray, posI, u, v)) {
 				
 				if (rayTriangleIntersect(*(*(SceneModel*)la_escena.GetObject(i)).GetTriangle(j), ray, posI, t, u, v)){
-					if (IsCastShadow(posI, la_escena.GetLight(0)->position, la_escena, i))
-						if (posI.z < profundidad){
-							color = Vector(0, 0, 0);
-							profundidad = posI.z;
-						}
-
 					if (posI.z < profundidad){
-						triangle = *(*(SceneModel*)la_escena.GetObject(i)).GetTriangle(j);
-						color = TriangleColor(la_escena, triangle, posI, u, v, dentro);
+						if (IsCastShadow(posI, la_escena.GetLight(0)->position, la_escena, i))
+							color = Vector(0, 0, 0);
+						else{
+							triangle = *(*(SceneModel*)la_escena.GetObject(i)).GetTriangle(j);
+							color = TriangleColor(la_escena, triangle, posI, u, v, dentro);
+						}
 						profundidad = posI.z;
 					}
 				}

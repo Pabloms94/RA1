@@ -344,37 +344,102 @@ bool TriangleCollision(SceneTriangle &triangle, Ray ray, Vector &intPoint, float
 bool rayTriangleIntersect(SceneTriangle &triangle, Ray ray, Vector &intPoint, float &t, float &u, float &v)
 {
 	float const EPSILON = 0.000001;
-	Vector edge1 = triangle.vertex[1] - triangle.vertex[0];
-	Vector edge2 = triangle.vertex[2] - triangle.vertex[0];
-	//Calculamos el determinante
-	Vector pvec = ray.getDir().Cross(edge2);
-	float det = edge1.Dot(pvec);
+	Vector v0v1 = triangle.vertex[1] - triangle.vertex[0];
+	Vector v0v2 = triangle.vertex[2] - triangle.vertex[0];
+	//Calculamos la normal
+	Vector N = v0v1.Cross(v0v2);
+	float denom = N.Dot(N);
 
-	if (det < EPSILON) return false;
+	//Comprobamos si el rayo y el plano son paralelos
+	float N_Dir = N.Dot(ray.getDir());
+	if (fabs(N_Dir) < EPSILON) 
+		return false;
 
-	//Calculamos distancia del vertice 0 al origen del rayo
-	Vector tvec = ray.getOrigen() - triangle.vertex[0];
+	//Calculamos d
+	float d = N.Dot(triangle.vertex[0]);
 
-	//Calculamos el parámetro U y lo testeamos
-	u = tvec.Dot(pvec);// *invDet;
-	if (u < 0.0 || u > det) return false;
+	//Sacamos t y comprobamos si el triángulo se encuentra detrás del rayo
+	t = (N.Dot(ray.getOrigen()) + d) / N_Dir;
+	if (t < 0)
+		return false;
 
-	//Calculamos V y lo testeamos
-	Vector qvec = tvec.Cross(edge1);
-	v = ray.getDir().Dot(qvec);// *invDet;
-	if (v < 0.0 || (u + v) > det) return false;
+	//Punto de intersección
+	Vector P = ray.getOrigen() + ray.getDir() * t;
 
-	//Calculamos t
-	t = edge2.Dot(qvec);// *invDet;
+	//C se usará como vector perpendicular al plano
+	Vector C;
 
-	float invDet = 1.0 / det;
+	//Tests para cada arista
+	//Arista 1
+	Vector edge0 = triangle.vertex[1] - triangle.vertex[0];
+	Vector v0p = P - triangle.vertex[0];
 
-	t *= invDet;
-	u *= invDet;
-	v *= invDet;
+	C = edge0.Cross(v0p);
+
+	//Comprobamos si P está en el lado correcto
+	if (N.Dot(C) < 0)
+		return false;
+
+	//Arista 2
+	Vector edge1 = triangle.vertex[2] - triangle.vertex[1];
+	Vector v1p = P - triangle.vertex[1];
+
+	C = edge1.Cross(v1p);
+	u = N.Dot(C);
+	//Comprobamos si P está en el lado correcto
+	if (u < 0)
+		return false;
+
+	//Arista 3
+	Vector edge2 = triangle.vertex[0] - triangle.vertex[2];
+	Vector v2p = P - triangle.vertex[2];
+
+	C = edge2.Cross(v2p);
+	v = N.Dot(C);
+	//Comprobamos si P está en el lado correcto
+	if (v < 0)
+		return false;
+
+	u /= denom;
+	v /= denom;
 
 	return true;
 }
+
+//bool rayTriangleIntersect(SceneTriangle &triangle, Ray ray, Vector &intPoint, float &t, float &u, float &v)
+//{
+//	float const EPSILON = 0.000001;
+//	Vector edge1 = triangle.vertex[1] - triangle.vertex[0];
+//	Vector edge2 = triangle.vertex[2] - triangle.vertex[0];
+//	//Calculamos el determinante
+//	Vector pvec = ray.getDir().Cross(edge2);
+//	float det = edge1.Dot(pvec);
+//
+//	if (det < EPSILON) return false;
+//
+//	//Calculamos distancia del vertice 0 al origen del rayo
+//	Vector tvec = ray.getOrigen() - triangle.vertex[0];
+//
+//	//Calculamos el parámetro U y lo testeamos
+//	u = tvec.Dot(pvec);// *invDet;
+//	if (u < 0.0 || u > det) return false;
+//
+//	//Calculamos V y lo testeamos
+//	Vector qvec = tvec.Cross(edge1);
+//	v = ray.getDir().Dot(qvec);// *invDet;
+//	if (v < 0.0 || (u + v) > det) return false;
+//
+//	//Calculamos t
+//	t = edge2.Dot(qvec);// *invDet;
+//
+//	float invDet = 1.0 / det;
+//
+//	t *= invDet;
+//	u *= invDet;
+//	v *= invDet;
+//
+//	return true;
+//}
 
 bool IsCastShadow(Vector orig, Vector pLight, Scene &la_escena, int indice)
 {

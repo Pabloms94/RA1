@@ -1,4 +1,4 @@
-﻿Compilación iniciada a las 16/03/2017 13:25:45.
+﻿Compilación iniciada a las 17/03/2017 19:34:18.
      1>Proyecto "C:\Users\Pablo\Desktop\Master\RA\RA1\Practica2 clean\Practica2.vcxproj" en el nodo 2 (Build destinos).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt RayTrace.cpp
@@ -6,8 +6,8 @@
      1>c:\users\pablo\desktop\master\ra\ra1\practica2 clean\raytrace.cpp(67): warning C4018: '<' : no coinciden signed/unsigned
      1>c:\users\pablo\desktop\master\ra\ra1\practica2 clean\raytrace.cpp(105): warning C4018: '<' : no coinciden signed/unsigned
      1>c:\users\pablo\desktop\master\ra\ra1\practica2 clean\raytrace.cpp(227): warning C4018: '<' : no coinciden signed/unsigned
-     1>c:\users\pablo\desktop\master\ra\ra1\practica2 clean\raytrace.cpp(386): warning C4018: '<' : no coinciden signed/unsigned
-     1>c:\users\pablo\desktop\master\ra\ra1\practica2 clean\raytrace.cpp(412): warning C4018: '<' : no coinciden signed/unsigned
+     1>c:\users\pablo\desktop\master\ra\ra1\practica2 clean\raytrace.cpp(451): warning C4018: '<' : no coinciden signed/unsigned
+     1>c:\users\pablo\desktop\master\ra\ra1\practica2 clean\raytrace.cpp(477): warning C4018: '<' : no coinciden signed/unsigned
      1>c:\users\pablo\desktop\master\ra\ra1\practica2 clean\raytrace.cpp(64): warning C4756: desbordamiento en la aritmética de constante
      1>c:\users\pablo\desktop\master\ra\ra1\practica2 clean\raytrace.cpp(125): warning C4756: desbordamiento en la aritmética de constante
      1>c:\users\pablo\desktop\master\ra\ra1\practica2 clean\raytrace.cpp(64): warning C4756: desbordamiento en la aritmética de constante
@@ -22,4 +22,4 @@
 
 Compilación correcta.
 
-Tiempo transcurrido 00:00:01.15
+Tiempo transcurrido 00:00:01.53

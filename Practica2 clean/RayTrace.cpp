@@ -249,47 +249,82 @@ Vector TriangleColor(Scene &escena, SceneTriangle &triangle, Vector &point, floa
 	Vector color = Vector(0.0f, 0.0f, 0.0f);
 	color = color + (Vector)(escena.GetBackground().ambientLight) * 0.07f;
 
+	SceneMaterial *material0 = escena.GetMaterial(triangle.material[0]);
+	SceneMaterial *material1 = escena.GetMaterial(triangle.material[1]);
+	SceneMaterial *material2 = escena.GetMaterial(triangle.material[2]);
+
+	Vector diffuse = (material1->diffuse) * u + (material2->diffuse) * v + (material0->diffuse) * (1 - u - v);
+	Vector specular = (material1->specular) * u + (material2->specular) * v + (material0->specular) * (1 - u - v);
+	float sh = (material1->shininess) * u + (material2->shininess) * v + (material0->shininess) * (1 - u - v);
+
 	Vector normal = triangle.normal[0] * u + triangle.normal[1] * v + triangle.normal[2] * (1 - u - v);
 	normal = normal / normal.Magnitude();
-	//Vector normal = (triangle.vertex[1] - triangle.vertex[0]).Cross(triangle.vertex[2] - triangle.vertex[0]);
-	//normal = normal / normal.Magnitude();
+	Vector V = (escena.GetCamera().GetPosition() - point).Normalize();
 
-	//printf("u: %f, v: %f, w: %f\n",u, v, (1 - u - v));
-	//Vector normal = triangle.normal[0] + triangle.normal[1] + triangle.normal[2] ;
-
-	Vector diffuse = (escena.GetMaterial(triangle.material[1])->diffuse) * u + (escena.GetMaterial(triangle.material[2])->diffuse) * v + (escena.GetMaterial(triangle.material[0])->diffuse) * (1 - u - v);
-	//diffuse = diffuse / diffuse.Magnitude();
-	//Vector especular = (escena.GetMaterial(triangle.material[1])->specular) * u + (escena.GetMaterial(triangle.material[2])->specular) * v + (escena.GetMaterial(triangle.material[0])->specular) * (1 - u - v);
-	//especular = especular / especular.Magnitude();
-	//float shininess = (escena.GetMaterial(triangle.material[1])->shininess) * u + (escena.GetMaterial(triangle.material[2])->shininess) * v + (escena.GetMaterial(triangle.material[0])->shininess) * (1 - u - v);
-
-	//for (int i = 0; i < escena.GetNumLights(); i++){
-		int i = 0;
+	for (int i = 0; i < escena.GetNumLights(); i++){
+		//Difusa
 		Vector L = (escena.GetLight(i)->position - point).Normalize();
 		Vector diff = escena.GetLight(i)->color * diffuse * normal.Dot(L);
-		//if (normal.Dot(L) < 1.f){
-		/*if (dentro){
-			printf("normal = %f, %f, %f\n", normal.x, normal.y, normal.z);
-			printf("L = %f, %f, %f\n", L.x, L.y, L.z);
-			printf("normal dot L = %f\n", normal.Dot(L));
-		}*/
-		//}
-		color = color + diff;// .Clamp();
 
-		//Especular
-		//Vector R = normal * 2.0f * (normal.Dot(L)) - L;
-		//Vector V = (escena.GetCamera().GetPosition() - point).Normalize();
-		//float Sfactor = R.Dot(V);
+		color = color + diffuse.Clamp();
 
-		//Sfactor = pow(Sfactor, shininess);
-		//Vector spec = escena.GetLight(i)->color * especular * Sfactor;
+		Vector R = normal * 2 * (normal.Dot(L)) - L;
+		Vector V = (escena.GetCamera().GetPosition() - point).Normalize();
+		float Sfactor = R.Dot(V);
 
-		//color = color + spec.Clamp();
-	//}
-		dentro = false;
+		Sfactor = pow(Sfactor, sh);
+		Vector spec = escena.GetLight(i)->color * specular * Sfactor; 
+		color = color + spec.Clamp();
+	}
 
 	return color;
 }
+
+//Vector TriangleColor(Scene &escena, SceneTriangle &triangle, Vector &point, float &u, float &v, bool &dentro){
+//	Vector color = Vector(0.0f, 0.0f, 0.0f);
+//	color = color + (Vector)(escena.GetBackground().ambientLight) * 0.07f;
+//	
+//	Vector normal = triangle.normal[0] * u + triangle.normal[1] * v + triangle.normal[2] * (1 - u - v);
+//	normal = normal / normal.Magnitude();
+//	//Vector normal = (triangle.vertex[1] - triangle.vertex[0]).Cross(triangle.vertex[2] - triangle.vertex[0]);
+//	//normal = normal / normal.Magnitude();
+//
+//	//printf("u: %f, v: %f, w: %f\n",u, v, (1 - u - v));
+//	//Vector normal = triangle.normal[0] + triangle.normal[1] + triangle.normal[2] ;
+//
+//	Vector diffuse = (escena.GetMaterial(triangle.material[1])->diffuse) * u + (escena.GetMaterial(triangle.material[2])->diffuse) * v + (escena.GetMaterial(triangle.material[0])->diffuse) * (1 - u - v);
+//	//diffuse = diffuse / diffuse.Magnitude();
+//	//Vector especular = (escena.GetMaterial(triangle.material[1])->specular) * u + (escena.GetMaterial(triangle.material[2])->specular) * v + (escena.GetMaterial(triangle.material[0])->specular) * (1 - u - v);
+//	//especular = especular / especular.Magnitude();
+//	//float shininess = (escena.GetMaterial(triangle.material[1])->shininess) * u + (escena.GetMaterial(triangle.material[2])->shininess) * v + (escena.GetMaterial(triangle.material[0])->shininess) * (1 - u - v);
+//
+//	//for (int i = 0; i < escena.GetNumLights(); i++){
+//		int i = 0;
+//		Vector L = (escena.GetLight(i)->position - point).Normalize();
+//		Vector diff = escena.GetLight(i)->color * diffuse * normal.Dot(L);
+//		//if (normal.Dot(L) < 1.f){
+//		/*if (dentro){
+//			printf("normal = %f, %f, %f\n", normal.x, normal.y, normal.z);
+//			printf("L = %f, %f, %f\n", L.x, L.y, L.z);
+//			printf("normal dot L = %f\n", normal.Dot(L));
+//		}*/
+//		//}
+//		color = color + diff;// .Clamp();
+//
+//		//Especular
+//		//Vector R = normal * 2.0f * (normal.Dot(L)) - L;
+//		//Vector V = (escena.GetCamera().GetPosition() - point).Normalize();
+//		//float Sfactor = R.Dot(V);
+//
+//		//Sfactor = pow(Sfactor, shininess);
+//		//Vector spec = escena.GetLight(i)->color * especular * Sfactor;
+//
+//		//color = color + spec.Clamp();
+//	//}
+//		dentro = false;
+//
+//	return color;
+//}
 
 /**/
 bool TriangleCollision(SceneTriangle &triangle, Ray ray, Vector &intPoint, float &u, float &v)
@@ -341,105 +376,106 @@ bool TriangleCollision(SceneTriangle &triangle, Ray ray, Vector &intPoint, float
 	//return Vector(0.0, 1.0, 0.0);
 }
 
-bool rayTriangleIntersect(SceneTriangle &triangle, Ray ray, Vector &intPoint, float &t, float &u, float &v)
-{
-	float const EPSILON = 0.000001;
-	Vector v0v1 = triangle.vertex[1] - triangle.vertex[0];
-	Vector v0v2 = triangle.vertex[2] - triangle.vertex[0];
-	//Calculamos la normal
-	Vector N = v0v1.Cross(v0v2);
-	float denom = N.Dot(N);
-
-	//Comprobamos si el rayo y el plano son paralelos
-	float N_Dir = N.Dot(ray.getDir());
-	if (fabs(N_Dir) < EPSILON) 
-		return false;
-
-	//Calculamos d
-	float d = N.Dot(triangle.vertex[0]);
-
-	//Sacamos t y comprobamos si el triángulo se encuentra detrás del rayo
-	t = (N.Dot(ray.getOrigen()) + d) / N_Dir;
-	if (t < 0)
-		return false;
-
-	//Punto de intersección
-	Vector P = ray.getOrigen() + ray.getDir() * t;
-
-	//C se usará como vector perpendicular al plano
-	Vector C;
-
-	//Tests para cada arista
-	//Arista 1
-	Vector edge0 = triangle.vertex[1] - triangle.vertex[0];
-	Vector v0p = P - triangle.vertex[0];
-
-	C = edge0.Cross(v0p);
-
-	//Comprobamos si P está en el lado correcto
-	if (N.Dot(C) < 0)
-		return false;
-
-	//Arista 2
-	Vector edge1 = triangle.vertex[2] - triangle.vertex[1];
-	Vector v1p = P - triangle.vertex[1];
-
-	C = edge1.Cross(v1p);
-	u = N.Dot(C);
-	//Comprobamos si P está en el lado correcto
-	if (u < 0)
-		return false;
-
-	//Arista 3
-	Vector edge2 = triangle.vertex[0] - triangle.vertex[2];
-	Vector v2p = P - triangle.vertex[2];
-
-	C = edge2.Cross(v2p);
-	v = N.Dot(C);
-	//Comprobamos si P está en el lado correcto
-	if (v < 0)
-		return false;
-
-	u /= denom;
-	v /= denom;
-
-	return true;
-}
-
 //bool rayTriangleIntersect(SceneTriangle &triangle, Ray ray, Vector &intPoint, float &t, float &u, float &v)
 //{
 //	float const EPSILON = 0.000001;
-//	Vector edge1 = triangle.vertex[1] - triangle.vertex[0];
-//	Vector edge2 = triangle.vertex[2] - triangle.vertex[0];
-//	//Calculamos el determinante
-//	Vector pvec = ray.getDir().Cross(edge2);
-//	float det = edge1.Dot(pvec);
+//	Vector v0v1 = triangle.vertex[1] - triangle.vertex[0];
+//	Vector v0v2 = triangle.vertex[2] - triangle.vertex[0];
+//	//Calculamos la normal
+//	Vector N = v0v1.Cross(v0v2);
+//	float denom = N.Dot(N);
 //
-//	if (det < EPSILON) return false;
+//	//Comprobamos si el rayo y el plano son paralelos
+//	float N_Dir = N.Dot(ray.getDir());
+//	if (fabs(N_Dir) < EPSILON) 
+//		return false;
 //
-//	//Calculamos distancia del vertice 0 al origen del rayo
-//	Vector tvec = ray.getOrigen() - triangle.vertex[0];
+//	//Calculamos d
+//	float d = N.Dot(triangle.vertex[0]);
 //
-//	//Calculamos el parámetro U y lo testeamos
-//	u = tvec.Dot(pvec);// *invDet;
-//	if (u < 0.0 || u > det) return false;
+//	//Sacamos t y comprobamos si el triángulo se encuentra detrás del rayo
+//	t = (N.Dot(ray.getOrigen()) + d) / N_Dir;
+//	if (t < 0)
+//		return false;
 //
-//	//Calculamos V y lo testeamos
-//	Vector qvec = tvec.Cross(edge1);
-//	v = ray.getDir().Dot(qvec);// *invDet;
-//	if (v < 0.0 || (u + v) > det) return false;
+//	//Punto de intersección
+//	Vector P = ray.getOrigen() + ray.getDir() * t;
+//	intPoint = P;
 //
-//	//Calculamos t
-//	t = edge2.Dot(qvec);// *invDet;
+//	//C se usará como vector perpendicular al plano
+//	Vector C;
 //
-//	float invDet = 1.0 / det;
+//	//Tests para cada arista
+//	//Arista 1
+//	Vector edge0 = triangle.vertex[1] - triangle.vertex[0];
+//	Vector v0p = P - triangle.vertex[0];
 //
-//	t *= invDet;
-//	u *= invDet;
-//	v *= invDet;
+//	C = edge0.Cross(v0p);
+//
+//	//Comprobamos si P está en el lado correcto
+//	if (N.Dot(C) < 0)
+//		return false;
+//
+//	//Arista 2
+//	Vector edge1 = triangle.vertex[2] - triangle.vertex[1];
+//	Vector v1p = P - triangle.vertex[1];
+//
+//	C = edge1.Cross(v1p);
+//	u = N.Dot(C);
+//	//Comprobamos si P está en el lado correcto
+//	if (u < 0)
+//		return false;
+//
+//	//Arista 3
+//	Vector edge2 = triangle.vertex[0] - triangle.vertex[2];
+//	Vector v2p = P - triangle.vertex[2];
+//
+//	C = edge2.Cross(v2p);
+//	v = N.Dot(C);
+//	//Comprobamos si P está en el lado correcto
+//	if (v < 0)
+//		return false;
+//
+//	u /= denom;
+//	v /= denom;
 //
 //	return true;
 //}
+
+bool rayTriangleIntersect(SceneTriangle &triangle, Ray ray, Vector &intPoint, float &t, float &u, float &v)
+{
+	float const EPSILON = 0.000001;
+	Vector edge1 = triangle.vertex[1] - triangle.vertex[0];
+	Vector edge2 = triangle.vertex[2] - triangle.vertex[0];
+	//Calculamos el determinante
+	Vector pvec = ray.getDir().Cross(edge2);
+	float det = edge1.Dot(pvec);
+
+	if (det < EPSILON) return false;
+
+	//Calculamos distancia del vertice 0 al origen del rayo
+	Vector tvec = ray.getOrigen() - triangle.vertex[0];
+
+	//Calculamos el parámetro U y lo testeamos
+	u = tvec.Dot(pvec);// *invDet;
+	if (u < 0.0 || u > det) return false;
+
+	//Calculamos V y lo testeamos
+	Vector qvec = tvec.Cross(edge1);
+	v = ray.getDir().Dot(qvec);// *invDet;
+	if (v < 0.0 || (u + v) > det) return false;
+
+	//Calculamos t
+	t = edge2.Dot(qvec);// *invDet;
+
+	float invDet = 1.0 / det;
+
+	t *= invDet;
+	u *= invDet;
+	v *= invDet;
+
+	return true;
+}
 
 bool IsCastShadow(Vector orig, Vector pLight, Scene &la_escena, int indice)
 {

@@ -65,17 +65,10 @@ Vector RayTrace::CalculatePixel (int screenX, int screenY)
    bool isIntersect = false;
 
    //Calculamos el color con los rebotes del rayo
-   color = DrawRay(ray, 2, la_escena);
-
-   //printf("(%f, %f, %f)\n", color.x, color.y, color.z);
-    
-   //if (profundidad != INFINITY)
-	   return color;
-   //else
-	  // return la_escena.GetBackground().color;
+   return DrawRay(ray, 2, la_escena, -1);
 }
 
-Vector RayTrace::DrawRay(Ray ray, int rebotes, Scene &la_escena)
+Vector RayTrace::DrawRay(Ray ray, int rebotes, Scene &la_escena, int idCollision)
 {
 	if (rebotes < 1)
 		return Vector(0.0f, 0.0f, 0.0f);
@@ -85,10 +78,12 @@ Vector RayTrace::DrawRay(Ray ray, int rebotes, Scene &la_escena)
 		Vector color(0.0f, 0.0f, 0.0f);
 		Vector interPoint, normal;
 		bool dontIntersect = true;
+		Ray reflectRay;
+		int id = -1;
 
 		for (int i = 0; i < la_escena.GetNumObjects(); i++)
 		{
-			if (la_escena.GetObject(i)->IsSphere() && SphereCollision(*(SceneSphere*)la_escena.GetObject(i), ray, interPoint))
+			if (la_escena.GetObject(i)->IsSphere() && SphereCollision(*(SceneSphere*)la_escena.GetObject(i), ray, interPoint) && idCollision != i)
 			{
 				dontIntersect = false;
 				float distCalc = (interPoint - ray.getOrigen()).Magnitude();
@@ -97,47 +92,59 @@ Vector RayTrace::DrawRay(Ray ray, int rebotes, Scene &la_escena)
 					targetDistance = distCalc;
 					normal = (interPoint - (*(SceneSphere*)la_escena.GetObject(i)).center).Normalize();
 					color = SphereColor(la_escena, *(SceneSphere*)la_escena.GetObject(i), interPoint);
+					id = i;
+
+					reflectRay = Ray(interPoint, Reflection(ray.getDir(), normal));
 				}
 			}
 			
-			if (la_escena.GetObject(i)->IsTriangle() && TriangleCollision(*(SceneTriangle*)la_escena.GetObject(i), ray, interPoint))
+			if (la_escena.GetObject(i)->IsTriangle() && TriangleCollision(*(SceneTriangle*)la_escena.GetObject(i), ray, interPoint)/* && idCollision != i*/)
 			{
 				dontIntersect = false;
 				float distCalc = (interPoint - ray.getOrigen()).Magnitude();
 				if (targetDistance > distCalc)
 				{
+					targetDistance = distCalc;
 					SceneTriangle triangle = *(SceneTriangle*)la_escena.GetObject(i);
 					Vector bary = Barycentric(ray.getOrigen(), triangle.vertex[0], triangle.vertex[1], triangle.vertex[2]);
 					color = TriangleColor(la_escena, triangle, interPoint, bary.x, bary.y, bary.z);
 					normal = (triangle.normal[0] * bary.x + triangle.normal[1] * bary.y + triangle.normal[2] * bary.z).Normalize();
+					reflectRay = Ray(interPoint, Reflection(ray.getDir(), normal));
+					id = i;
 				}
 			}
 			
-			if (la_escena.GetObject(i)->IsModel())
+			if (la_escena.GetObject(i)->IsModel() && idCollision != i)
 			{
-				unsigned int nTriangles = (*(SceneModel*)la_escena.GetObject(i)).GetNumTriangles();
+				int nTriangles = (*(SceneModel*)la_escena.GetObject(i)).GetNumTriangles();
 				for (int j = 0; j < nTriangles; j++){
 					SceneTriangle triangle = *(*(SceneModel*)la_escena.GetObject(i)).GetTriangle(j);
 
 					if (TriangleCollision(triangle, ray, interPoint)){
 						dontIntersect = false;
-						float distCalc = (interPoint - ray.getDir()).Magnitude();
+						float distCalc = (interPoint - ray.getOrigen()).Magnitude();
 						if (targetDistance > distCalc)
 						{
+							targetDistance = distCalc;
 							Vector bary = Barycentric(ray.getDir(), triangle.vertex[0], triangle.vertex[1], triangle.vertex[2]);
 							color = TriangleColor(la_escena, triangle, interPoint, bary.x, bary.y, bary.z);
 							normal = (triangle.normal[0] * bary.x + triangle.normal[1] * bary.y + triangle.normal[2] * bary.z).Normalize();
+							reflectRay = Ray(interPoint, Reflection(ray.getDir(), normal));
+							id = i;
 						}
 					}
 				}
 			}
 		}
 
-		if (dontIntersect)
+		if (dontIntersect && rebotes == 1){
+			return Vector(0.0f, 0.0f, 0.0f);
+		}
+		else if (dontIntersect)
 			return la_escena.GetBackground().color;
 
-		Ray reflectRay(interPoint, Reflection(ray.getDir(), normal));
-		return color + DrawRay(reflectRay, rebotes - 1, la_escena);
+		
+		return (color + DrawRay(reflectRay, rebotes - 1, la_escena, id));
 	}
 }
 
@@ -219,18 +226,16 @@ Vector RayTrace::SphereIntersect(Ray ray, Vector p, SceneSphere &esfera)
 
 Vector RayTrace::SphereColor(Scene &escena, SceneSphere sphere, Vector point){
 	Vector color = Vector (0.0f, 0.0f, 0.0f);
-
 	color = color + (Vector)(escena.GetBackground().ambientLight) * 0.07f;
 
 	SceneMaterial *material = escena.GetMaterial(sphere.material);
-	
-	//Vector normal = (sphere.center - point).Normalize();
+
 	Vector normal = (point - sphere.center).Normalize();
 	Vector V = (escena.GetCamera().GetPosition() - point).Normalize();
 
 	for (int i = 0; i < escena.GetNumLights(); i++){
 		//Difusa
-		if (IsCastShadow(point, escena.GetLight(i)->position, escena, 0))
+		if (IsCastShadow(point, escena.GetLight(i)->position, escena))
 		{
 			color = (Vector)(escena.GetBackground().ambientLight) * 0.07f;
 		}
@@ -272,7 +277,7 @@ Vector RayTrace::TriangleColor(Scene &escena, SceneTriangle &triangle, Vector &p
 	Vector V = (escena.GetCamera().GetPosition() - point).Normalize();
 
 	for (int i = 0; i < escena.GetNumLights(); i++){
-		if (IsCastShadow(point, escena.GetLight(i)->position, escena, 0))
+		if (IsCastShadow(point, escena.GetLight(i)->position, escena))
 		{
 			color = (Vector)(escena.GetBackground().ambientLight) * 0.07f;
 		}
@@ -280,15 +285,15 @@ Vector RayTrace::TriangleColor(Scene &escena, SceneTriangle &triangle, Vector &p
 		{
 			//Difusa
 			Vector L = (escena.GetLight(i)->position - point).Normalize();
-			Vector diff = escena.GetLight(i)->color * diffuse * L.Dot(N);
+			Vector diff = escena.GetLight(i)->color * diffuse * N.Dot(L);
 
-			//printf("u: %f, v: %f, w: %f\n", diff.x, diff.y, diff.z);
+			//printf("u: %f, v: %f, w: %f\n", u, v, w);
 			//printf("diffuse  u: %f, v: %f, w: %f\n", diffuse.x, diffuse.y, diffuse.z);
 
 			color = color + diff.Clamp();
 			//printf("diff  r: %f, g: %f, b: %f\n", color.x, color.y, color.z);
 
-			Vector R = (N * 2.0f * L.Dot(N) - L).Normalize();
+			Vector R = (N * 2 * N.Dot(L) - L).Normalize();
 			float Sfactor = R.Dot(V);
 
 			Sfactor = pow(Sfactor, sh);
@@ -317,7 +322,6 @@ bool RayTrace::TriangleCollision(SceneTriangle &triangle, Ray ray, Vector &intPo
 	det = e1.Dot(P);
 
 	if (det > -epsilon && det < epsilon) return false;		
-		//return Vector(0.0, 0.0, 1.0);
 
 	inv_det = 1.0f / det;
 	
@@ -327,7 +331,6 @@ bool RayTrace::TriangleCollision(SceneTriangle &triangle, Ray ray, Vector &intPo
 
 	if (u < 0.0f || u > 1.0f)
 		return false;
-		//return Vector(0.0, 0.0, 1.0);
 
 	Q= T.Cross(e1);
 	v = ray.getDir().Dot(Q) * inv_det;
@@ -351,7 +354,7 @@ bool RayTrace::TriangleCollision(SceneTriangle &triangle, Ray ray, Vector &intPo
 	//return Vector(0.0, 1.0, 0.0);
 }
 
-bool RayTrace::IsCastShadow(Vector orig, Vector pLight, Scene &la_escena, int indice)
+bool RayTrace::IsCastShadow(Vector orig, Vector pLight, Scene &la_escena)
 {
 	Ray ray;
 	ray.setOrigen(orig);
@@ -362,29 +365,19 @@ bool RayTrace::IsCastShadow(Vector orig, Vector pLight, Scene &la_escena, int in
 
 	for (int i = 0; i < la_escena.GetNumObjects() && !oclusion; i++)
 	{
-		//if (i == indice)
-		//	continue;
-
 		if (la_escena.GetObject(i)->IsSphere() && SphereCollision(*(SceneSphere*)la_escena.GetObject(i), ray, posI)){
 			if (GetDistance(orig, pLight) > GetDistance(posI, pLight))
 				oclusion = true;
-				//	return true;
 		}
 		else if (la_escena.GetObject(i)->IsTriangle() && TriangleCollision(*(SceneTriangle*)la_escena.GetObject(i), ray, posI)){
-				//if (ray.getDir().Magnitude() > (orig - posI).Magnitude() && (ray.getDir().Magnitude() > (posI - pLight).Magnitude()))
 				if (GetDistance(orig, pLight) > GetDistance(posI, pLight))
 					oclusion = true;
 		}
 		else if (la_escena.GetObject(i)->IsModel())
 		{
 			unsigned int nTriangles = (*(SceneModel*)la_escena.GetObject(i)).GetNumTriangles();
-			/*bool dentro = true;*/
 			for (int j = 0; j < nTriangles && !oclusion; j++){
-				//float u, v, t;
-				//if (TriangleCollision(*(*(SceneModel*)la_escena.GetObject(i)).GetTriangle(j), ray, posI, u, v)) {
-
 				if (TriangleCollision(*(*(SceneModel*)la_escena.GetObject(i)).GetTriangle(j), ray, posI)){
-					//if (ray.getDir().Magnitude() >(orig - posI).Magnitude() && (ray.getDir().Magnitude() > (posI - pLight).Magnitude()))
 					if (GetDistance(orig, pLight) > GetDistance(posI, pLight))
 						oclusion = true;
 				}
@@ -392,11 +385,9 @@ bool RayTrace::IsCastShadow(Vector orig, Vector pLight, Scene &la_escena, int in
 		}
 	}
 	return oclusion;
-
-	//return false;
 }
 
-float GetDistance(Vector origen, Vector destino){
+float RayTrace::GetDistance(Vector origen, Vector destino){
 	return (sqrt(pow(destino.x - origen.x, 2) + (pow(destino.y - origen.y, 2)) + (pow(destino.z - origen.z, 2))));
 }
 

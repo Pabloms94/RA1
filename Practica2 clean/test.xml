@@ -101,11 +101,11 @@
 			<position x="0.0" y="0.0" z="0.0"/>
 		</model>
 		<!-- Model in OBJ File Format -->
-		<model filename="objects/cube.obj" name="cube"  material="White">
+		<!--<model filename="objects/cube.obj" name="cube"  material="White">
 			<scale x="1.0" y="1.0" z="1.0"/>
 			<rotation x="0.0" y="0.0" z="0.0"/>
 			<position x="0.0" y="0.0" z="0.0"/>
-		</model>
+		</model> -->
 	</object_list>
 	
 <!-- End of Scene -->

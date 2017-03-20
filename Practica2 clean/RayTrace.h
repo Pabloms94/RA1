@@ -27,7 +27,7 @@
 
 
 
-float GetDistance(Vector origen, Vector destino);
+
 
 class RayTrace
 {
@@ -48,13 +48,14 @@ public:
    Vector CalculatePixel (int screenX, int screenY);
    Ray CalculateRay(int screenX, int screenY);
    Vector Barycentric(Vector p, Vector a, Vector b, Vector c);
-   Vector DrawRay(Ray ray, int rebotes, Scene &la_escena);
+   Vector DrawRay(Ray ray, int rebotes, Scene &la_escena, int idCollision);
    Vector Reflection(Vector dir, Vector normal);
    bool SphereCollision(SceneSphere &esfera, Ray ray, Vector &posIntersect);
    bool TriangleCollision(SceneTriangle &triangle, Ray ray, Vector &intPoint);
    Vector SphereIntersect(Ray ray, Vector p, SceneSphere &esfera);
    Vector SphereColor(Scene &escena, SceneSphere sphere, Vector point);
    Vector TriangleColor(Scene &escena, SceneTriangle &triangle, Vector &point, float &u, float &v, float &w);
-   bool IsCastShadow(Vector orig, Vector pLight, Scene &la_escena, int indice);
+   bool IsCastShadow(Vector orig, Vector pLight, Scene &la_escena);
+   float GetDistance(Vector origen, Vector destino);
 };
 

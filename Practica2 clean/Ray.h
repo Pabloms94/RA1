@@ -12,6 +12,10 @@ private:
 	Vector direction;
 public:
 	Ray(){}
+	Ray(Vector orig, Vector dir){
+		this->origen = orig;
+		this->direction = dir;
+	}
 	inline Vector getOrigen() { return origen; }
 	inline Vector getDir() { return direction; }
 

@@ -1,9 +1,27 @@
-﻿Build started 19/03/2017 23:28:02.
+﻿Build started 24/06/2017 11:57:49.
      1>Project "C:\Users\Vicente\Desktop\RA1\Practica2 clean\Practica2.vcxproj" on node 2 (Build target(s)).
-     1>Link:
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /O2 /Oy- /GL /D WIN32 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt RayTrace.cpp starter.cpp
+         RayTrace.cpp
+     1>RayTrace.cpp(76): warning C4018: '<' : signed/unsigned mismatch
+     1>RayTrace.cpp(234): warning C4018: '<' : signed/unsigned mismatch
+     1>RayTrace.cpp(277): warning C4018: '<' : signed/unsigned mismatch
+     1>RayTrace.cpp(364): warning C4018: '<' : signed/unsigned mismatch
+     1>RayTrace.cpp(384): warning C4018: '<' : signed/unsigned mismatch
+         starter.cpp
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Vicente\Desktop\RA1\Practica2 clean\Release\Practica2.exe" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /NODEFAULTLIB:libc.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\Vicente\Desktop\RA1\Practica2 clean\Release\Practica2.pdb" /SUBSYSTEM:CONSOLE /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Vicente\Desktop\RA1\Practica2 clean\Release\Practica2.lib" /MACHINE:X86 /SAFESEH:NO Release\3ds.obj
+         Release\RayTrace.obj
+         Release\Scene.obj
+         Release\starter.obj
+         Release\xmlParser.obj
+         Generating code
+     1>c:\users\vicente\desktop\ra1\practica2 clean\raytrace.cpp(69): warning C4756: overflow in constant arithmetic
+     1>c:\users\vicente\desktop\ra1\practica2 clean\raytrace.cpp(69): warning C4756: overflow in constant arithmetic
+         Finished generating code
          Practica2.vcxproj -> C:\Users\Vicente\Desktop\RA1\Practica2 clean\Release\Practica2.exe
      1>Done Building Project "C:\Users\Vicente\Desktop\RA1\Practica2 clean\Practica2.vcxproj" (Build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:00.07
+Time Elapsed 00:00:07.62

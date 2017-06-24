@@ -276,7 +276,10 @@ void doIdle()
 {
 	if (g_bRayTrace)
 	{
-		g_ScreenBuffer[g_Y][g_X] = g_RayTrace.CalculatePixel (g_X, g_Y);
+		if (g_bRenderNormal)
+			g_ScreenBuffer[g_Y][g_X] = g_RayTrace.CalculatePixel (g_X, g_Y);
+		else
+			g_ScreenBuffer[g_Y][g_X] = g_RayTrace.CalculatePixelAntialiasing(g_X, g_Y);
 
 		//printf ("Drawing %d, %d\n", g_X, g_Y);
 

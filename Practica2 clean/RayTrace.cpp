@@ -55,14 +55,6 @@ Vector RayTrace::CalculatePixel (int screenX, int screenY)
    aspect = (float)Scene::WINDOW_WIDTH / (float)Scene::WINDOW_HEIGHT;
 
    Ray ray = CalculateRay(screenX, screenY);
-   
-   SceneSphere sphere;
-   SceneTriangle triangle;
-   SceneModel model;
-   Vector posI;
-   Vector color;
-   float profundidad = INFINITY;
-   bool isIntersect = false;
 
    //Calculamos el color con los rebotes del rayo
    return DrawRay(ray, 2, la_escena, -1);
@@ -83,34 +75,40 @@ Vector RayTrace::DrawRay(Ray ray, int rebotes, Scene &la_escena, int idCollision
 
 		for (int i = 0; i < la_escena.GetNumObjects(); i++)
 		{
-			if (la_escena.GetObject(i)->IsSphere() && SphereCollision(*(SceneSphere*)la_escena.GetObject(i), ray, interPoint) && idCollision != i)
+			if (la_escena.GetObject(i)->IsSphere())
 			{
-				dontIntersect = false;
-				float distCalc = (interPoint - ray.getOrigen()).Magnitude();
-				if (targetDistance > distCalc)
+				if (SphereCollision(*(SceneSphere*)la_escena.GetObject(i), ray, interPoint) && idCollision != i)
 				{
-					targetDistance = distCalc;
-					normal = (interPoint - (*(SceneSphere*)la_escena.GetObject(i)).center).Normalize();
-					color = SphereColor(la_escena, *(SceneSphere*)la_escena.GetObject(i), interPoint);
-					id = i;
+					dontIntersect = false;
+					float distCalc = (interPoint - ray.getOrigen()).Magnitude();
+					if (targetDistance > distCalc)
+					{
+						targetDistance = distCalc;
+						normal = (interPoint - (*(SceneSphere*)la_escena.GetObject(i)).center).Normalize();
+						color = SphereColor(la_escena, *(SceneSphere*)la_escena.GetObject(i), interPoint);
+						id = i;
 
-					reflectRay = Ray(interPoint, Reflection(ray.getDir(), normal));
+						reflectRay = Ray(interPoint, Reflection(ray.getDir(), normal));
+					}
 				}
 			}
 			
-			if (la_escena.GetObject(i)->IsTriangle() && TriangleCollision(*(SceneTriangle*)la_escena.GetObject(i), ray, interPoint)/* && idCollision != i*/)
+			if (la_escena.GetObject(i)->IsTriangle())
 			{
-				dontIntersect = false;
-				float distCalc = (interPoint - ray.getOrigen()).Magnitude();
-				if (targetDistance > distCalc)
+				if (TriangleCollision(*(SceneTriangle*)la_escena.GetObject(i), ray, interPoint)/* && idCollision != i*/)
 				{
-					targetDistance = distCalc;
-					SceneTriangle triangle = *(SceneTriangle*)la_escena.GetObject(i);
-					Vector bary = Barycentric(ray.getOrigen(), triangle.vertex[0], triangle.vertex[1], triangle.vertex[2]);
-					color = TriangleColor(la_escena, triangle, interPoint, bary.x, bary.y, bary.z);
-					normal = (triangle.normal[0] * bary.x + triangle.normal[1] * bary.y + triangle.normal[2] * bary.z).Normalize();
-					reflectRay = Ray(interPoint, Reflection(ray.getDir(), normal));
-					id = i;
+					dontIntersect = false;
+					float distCalc = (interPoint - ray.getOrigen()).Magnitude();
+					if (targetDistance > distCalc)
+					{
+						targetDistance = distCalc;
+						SceneTriangle triangle = *(SceneTriangle*)la_escena.GetObject(i);
+						Vector bary = Barycentric(ray.getOrigen(), triangle.vertex[0], triangle.vertex[1], triangle.vertex[2]);
+						color = TriangleColor(la_escena, triangle, interPoint, bary.x, bary.y, bary.z);
+						normal = (triangle.normal[0] * bary.x + triangle.normal[1] * bary.y + triangle.normal[2] * bary.z).Normalize();
+						reflectRay = Ray(interPoint, Reflection(ray.getDir(), normal));
+						id = i;
+					}
 				}
 			}
 			
@@ -168,17 +166,17 @@ Ray RayTrace::CalculateRay(int screenX, int screenY){
 bool RayTrace::SphereCollision(SceneSphere &esfera, Ray ray, Vector &posIntersect){
 	float t = (esfera.center - ray.getOrigen()).Dot(ray.getDir());
 	Vector proj = ray.getOrigen() + ray.getDir() * t;
-	Vector dist = (proj - esfera.center);
+	float dist = (proj - esfera.center).Magnitude();
 
-	posIntersect = SphereIntersect(ray, proj, esfera);
+	posIntersect = SphereIntersect(ray, esfera);
 
-	if (dist.Magnitude() < esfera.radius)
+	if (dist < esfera.radius)
 		return true;
-	else
-		return false;
+	
+	return false;
 }
 
-Vector RayTrace::SphereIntersect(Ray ray, Vector p, SceneSphere &esfera)
+Vector RayTrace::SphereIntersect(Ray ray, SceneSphere &esfera)
 {
 	float result1, result2;
 	Vector result;
@@ -365,13 +363,20 @@ bool RayTrace::IsCastShadow(Vector orig, Vector pLight, Scene &la_escena)
 
 	for (int i = 0; i < la_escena.GetNumObjects() && !oclusion; i++)
 	{
-		if (la_escena.GetObject(i)->IsSphere() && SphereCollision(*(SceneSphere*)la_escena.GetObject(i), ray, posI)){
-			if (GetDistance(orig, pLight) > GetDistance(posI, pLight))
-				oclusion = true;
-		}
-		else if (la_escena.GetObject(i)->IsTriangle() && TriangleCollision(*(SceneTriangle*)la_escena.GetObject(i), ray, posI)){
+		if (la_escena.GetObject(i)->IsSphere())
+		{
+			if (SphereCollision(*(SceneSphere*)la_escena.GetObject(i), ray, posI)){
 				if (GetDistance(orig, pLight) > GetDistance(posI, pLight))
 					oclusion = true;
+			}
+		}
+		else if (la_escena.GetObject(i)->IsTriangle())
+		{
+			if (TriangleCollision(*(SceneTriangle*)la_escena.GetObject(i), ray, posI))
+			{
+				if (GetDistance(orig, pLight) > GetDistance(posI, pLight))
+					oclusion = true;
+			}
 		}
 		else if (la_escena.GetObject(i)->IsModel())
 		{
@@ -391,7 +396,7 @@ float RayTrace::GetDistance(Vector origen, Vector destino){
 	return (sqrt(pow(destino.x - origen.x, 2) + (pow(destino.y - origen.y, 2)) + (pow(destino.z - origen.z, 2))));
 }
 
-Vector RayTrace::Barycentric(Vector p, Vector a, Vector b, Vector c)
+Vector RayTrace::Barycentric(Vector p, Vector a, Vector b, Vector c)		//CAMBIAR
 {
 	Vector v0 = b - a, v1 = c - a, v2 = p - a;
 	float d00 = v0.Dot(v0);
@@ -410,4 +415,86 @@ Vector RayTrace::Barycentric(Vector p, Vector a, Vector b, Vector c)
 Vector RayTrace::Reflection(Vector dir, Vector normal)
 {
 	return dir - normal * (dir.Dot(normal)) * 2;
+}
+
+Vector RayTrace::CalculatePixelAntialiasing(int screenX, int screenY)
+{
+	Scene &la_escena = m_Scene;
+	Camera mycam = la_escena.GetCamera();
+	Vector posicion = mycam.GetPosition();
+
+	if ((screenX < 0 || screenX > Scene::WINDOW_WIDTH - 1) ||
+		(screenY < 0 || screenY > Scene::WINDOW_HEIGHT - 1))
+	{
+		// Off the screen, return black
+		return Vector(0.0f, 0.0f, 0.0f);
+	}
+
+	//Configuramos la cámara
+	pos = mycam.GetPosition();
+	lookat = mycam.GetTarget() - pos;
+	up = mycam.GetUp();
+	right = lookat.Cross(up);
+	up = right.Cross(lookat);
+
+	up.Normalize();
+	right.Normalize();
+	lookat.Normalize();
+
+	angle = mycam.GetFOV() * 3.1416f / 180.0f;
+	tangen = tan(angle / 2.0f);
+	aspect = (float)Scene::WINDOW_WIDTH / (float)Scene::WINDOW_HEIGHT;
+
+	//Calculamos los rayos, al hacer un antialiasing x4, tenemos que tirar 4 rayos por pixel
+	//y calcular el valor medio de estos.
+	Ray *ray = Calculate4Rays(screenX, screenY);
+
+	Vector colorFinal;
+
+	//Calculamos el color con los rebotes del rayo de cada uno de los cuatro rayos
+	for (int i = 0; i < 4; i++)
+		colorFinal = colorFinal + DrawRay(ray[i], 2, la_escena, -1) * 0.25f;
+
+	return colorFinal;
+}
+
+Ray	* RayTrace::Calculate4Rays(int screenX, int screenY)
+{
+	// Para calcular los cuatros rayos voy a dividir el pixel en 4 regiones y
+	// para evitar posibles artefactos los genero su dirección en sus regiones
+	// de forma aleatoria.
+
+	Ray *fourRays = new Ray[4];
+
+	int cont = 0;
+
+	for (float x_ant = 0, x = 0.5f; x <= 1.0f; x_ant += 0.5f, x += 0.5)
+	{
+		for (float y_ant = 0, y = 0.5f; y <= 1.0f; y_ant += 0.5f, y += 0.5, cont++)
+		{
+			float diff = x - x_ant;
+			float r = (((float)rand()) / (float)RAND_MAX) * diff;
+			float coordX = x_ant + r;
+
+			diff = y - y_ant;
+			r = (((float)rand()) / (float)RAND_MAX) * diff;
+			float coordY = y_ant + r;
+
+			float cX = float(screenX + coordX);
+			float cY = float(screenY + coordY);
+
+			float pixelCameraX = (cX * 2.0f / (float)m_Scene.WINDOW_WIDTH) - 1.0f;
+			float pixelCameraY = (cY * 2.0f / (float)m_Scene.WINDOW_HEIGHT) - 1.0f;
+
+			Vector dir;
+			up = right.Cross(lookat);
+			dir = lookat + right * aspect * tangen * pixelCameraX + up * tangen * pixelCameraY;
+			dir.Normalize();
+
+			fourRays[cont].setDir(dir);
+			fourRays[cont].setOrigen(pos);
+		}
+	}
+
+	return fourRays;
 }

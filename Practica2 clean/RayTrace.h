@@ -52,10 +52,13 @@ public:
    Vector Reflection(Vector dir, Vector normal);
    bool SphereCollision(SceneSphere &esfera, Ray ray, Vector &posIntersect);
    bool TriangleCollision(SceneTriangle &triangle, Ray ray, Vector &intPoint);
-   Vector SphereIntersect(Ray ray, Vector p, SceneSphere &esfera);
+   Vector SphereIntersect(Ray ray, SceneSphere &esfera);
    Vector SphereColor(Scene &escena, SceneSphere sphere, Vector point);
    Vector TriangleColor(Scene &escena, SceneTriangle &triangle, Vector &point, float &u, float &v, float &w);
    bool IsCastShadow(Vector orig, Vector pLight, Scene &la_escena);
    float GetDistance(Vector origen, Vector destino);
+
+	Vector	CalculatePixelAntialiasing(int screenX, int screenY);
+	Ray		*Calculate4Rays(int screenX, int screenY);
 };
 
